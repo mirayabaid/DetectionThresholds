@@ -14,14 +14,25 @@ from scipy.stats import norm
 import random
 
 
-def PlotPsychometricFunction(stim_start, stim_end, mu, sigma):
+def PlotPsychometricFunction(stim_start = 0,
+                             stim_end = 100, 
+                             mu = 50, 
+                             sigma = 5):
     stim_x = np.linspace(stim_start, stim_end, 100)
     pr_correct = norm.cdf(stim_x, loc = mu, scale = sigma) 
     plt.plot(stim_x, pr_correct, color = 'red')
     plt.xlabel('stimulus intensity')
     plt.ylabel('p(correct)')
+    plt.show()
     return plt.show()
 
+psychometric_function_plot = PlotPsychometricFunction()
+
+# def GetStaircaseConvergenceThreshold(NumAFC = 2, 
+                                    # Criterion = (3,1)): 
+                                        
+    
+    
 def SimulateTransformedStaircase(NumSimulations = 1000, 
                                  PsychometricCurveMu = 50,
                                  PsychometricCurveSigma = 5,
@@ -32,7 +43,7 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                                  NumAFC = 2, 
                                  Criterion = (3,1), 
                                  InitialStepSize = 10, 
-                                 StepFactor = 0.5,
+                                 StepFactor = 0.8,
                                  NumReversionsSkipped = 0):
     
     # initialize variables for every simulation 
@@ -99,35 +110,57 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
 
 Trial_Amplitude_History, Reversion_Amplitude_History = SimulateTransformedStaircase()
 
-# number of trials plot 
+# number of trials vs number of reversions plot  
 
 # optimizing number of reversions + number of reversions to skip + plots 
-
-## calculate the estimated threshold for each number of reversals or for each number of initial reversals skipped
+    ## calculate the estimated threshold for each number of reversals or for each number of initial reversals skipped
  
-def CalculateThresholds(Reversion_Amplitude_History):
+def CalculateReversionThresholds(Reversion_Amplitude_History):
     NumReversions, NumSimulations = Reversion_Amplitude_History.shape
     
     # estimated threshold for each number of reversals counted 
-    reversals_counted_thresholds = np.full((NumSimulations, NumReversions), 0)
+    reversions_counted_thresholds = np.full((NumSimulations, NumReversions), 0)
     for i in range(NumSimulations): 
         for r in range(NumReversions): 
-            reversals_counted_thresholds[i, r] = np.mean(Reversion_Amplitude_History[:r+1, i])
+            reversions_counted_thresholds[i, r] = np.mean(Reversion_Amplitude_History[:r+1, i])
     
     # estimated threshold for each number of reversals skipped
-    reversals_skipped_thresholds = np.full((NumSimulations, NumReversions), 0)
+    reversions_skipped_thresholds = np.full((NumSimulations, NumReversions), 0)
     for i in range(NumSimulations): 
         for r in range(NumReversions): 
             if NumReversions - (r+1) > 0:
-                reversals_skipped_thresholds[i, r] = (sum(Reversion_Amplitude_History[:, i]) - sum(Reversion_Amplitude_History[:r+1, i]))/(NumReversions - (r+1))
+                reversions_skipped_thresholds[i, r] = (sum(Reversion_Amplitude_History[:, i]) - sum(Reversion_Amplitude_History[:r+1, i]))/(NumReversions - (r+1))
             else:
-                reversals_skipped_thresholds[i, r] = np.sum(Reversion_Amplitude_History[r+1:, i])
+                reversions_skipped_thresholds[i, r] = np.sum(Reversion_Amplitude_History[r+1:, i])
     
-    return reversals_counted_thresholds, reversals_skipped_thresholds
+    return reversions_counted_thresholds, reversions_skipped_thresholds, NumReversions
 
+reversions_counted_thresholds, reversions_skipped_thresholds, NumReversions = CalculateReversionThresholds(Reversion_Amplitude_History)
 
+# plotting 
+rc_mean_threshold = np.mean(reversions_counted_thresholds, axis = 0)
+rc_threshold_sd = np.std(reversions_counted_thresholds, axis = 0)
+rs_mean_threshold = np.mean(reversions_skipped_thresholds, axis = 0)
+rs_threshold_sd = np.mean(reversions_skipped_thresholds, axis = 0)
 
+# number of reversions plot 
+plt.errorbar(list(range(NumReversions)), rc_mean_threshold, yerr=rc_threshold_sd, fmt='o-', color='b', capsize=5, label='Mean Threshold Estimate ± SD')
+plt.axhline(y=55, color='r', linestyle='--')
+plt.xlabel('Number of Reversions')
+plt.ylabel('Mean Threshold Estimate')
+plt.title('Number of Reversions vs Mean Threshold Estimate ± SEM')
 
+plt.show()
+
+# number of initial reversions skipped plot 
+
+plt.errorbar(list(range(NumReversions)), rs_mean_threshold, yerr=rs_threshold_sd, fmt='o-', color='b', capsize=5, label='Mean Threshold Estimate ± SD')
+plt.axhline(y=55, color='r', linestyle='--')
+plt.xlabel('Number of Reversions')
+plt.ylabel('Mean Threshold Estimate')
+plt.title('Plot 2: Number of Reversions vs Mean Threshold Estimate ± SEM')
+
+plt.show()
 
     
     
