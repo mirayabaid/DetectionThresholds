@@ -55,92 +55,6 @@ def PlotPsychometricFunctionTarget(stimulus_range, pr_correct, target_probabilit
     plt.legend()
     plt.show()
 
-def PlotStaircaseProcedure(PsychometricCurveMu = 50,
-                                 PsychometricCurveSigma = 10,
-                                 StimulusIntensityStart = 0, 
-                                 StimulusIntensityStop = 100, 
-                                 NumAFC = 2, 
-                                 InitialStepSize = 5, 
-                                 StepFactor = 0.5, 
-                                 MaxNumTrials = 100, 
-                                 MaxNumReversions = 10,
-                                 Criterion = (3,1),
-                                 NumInitialReversionsSkipped = 0):
-    # initialize variables
-    stimulus_range = np.linspace(StimulusIntensityStart, StimulusIntensityStop, 100) 
-    stimulus_intensity = random.choice(stimulus_range)
-    step_size = InitialStepSize
-    reversion_counter = 0
-    reached_criterion = False
-    current_direction, new_direction = 0, 0
-    cumulative_score = [0,0] #[correct, incorrect]
-    intensity_values = []
-    reversions = [] # stores the trial number of a reversal
-    reversion_intensities = []
-    chance = 1/NumAFC
-    
-
-    for trial in range(MaxNumTrials): 
-        if np.random.uniform(0, 1) < norm.cdf(stimulus_intensity, loc = PsychometricCurveMu, scale = PsychometricCurveSigma) or np.random.uniform(0, 1) > chance:
-            response = 1 # correct, so stimulus intensity decreases 
-            color = 'green'
-        else: 
-            response = 0
-            color = 'red'
-            
-        intensity_values.append(stimulus_intensity)
-        
-        print(f"Trial = {trial + 1}: Stimulus Intensity = {stimulus_intensity}, Response = {response}")
-        
-        plt.step(trial, stimulus_intensity)
-        plt.scatter(trial, stimulus_intensity, color = color)
-        plt.xlabel('Trial #')
-        plt.ylabel('Stimulus Intensity')
-        
-        # Evaluate response
-        if response == 1: 
-            cumulative_score[0] += 1
-        else:
-            cumulative_score[1] +=1 
-        
-        # Evaluate criterion
-        if cumulative_score[0] >= Criterion[0]: # if three correct responses
-            new_direction = -1 # direction = down 
-            stimulus_intensity = max(0, stimulus_intensity - step_size) 
-            cumulative_score = [0,0]
-            reached_criterion = True
-        elif cumulative_score[1] == Criterion[1]: # if one wrong 
-            new_direction = +1
-            stimulus_intensity = min(100, stimulus_intensity + step_size)
-            cumulative_score = [0,0]
-            reached_criterion = True
-        
-        # compare new direction vs old direction 
-        if reached_criterion:
-            if current_direction == 0: 
-                current_direction = new_direction
-            elif current_direction != new_direction:
-                reversion_counter += 1
-                reversions.append(trial)
-                reversion_intensities.append(intensity_values[trial])
-                plt.scatter(trial, intensity_values[trial], facecolors = "none", edgecolors = "black")
-                current_direction = new_direction
-                step_size = step_size*StepFactor
-            
-        if reversion_counter == MaxNumReversions:
-            break 
-        
-    if NumInitialReversionsSkipped == 0:
-            staircase_threshold = sum(reversion_intensities)/len(reversion_intensities)
-    else:
-            staircase_threshold =  (sum(reversion_intensities) - sum(reversion_intensities[:NumInitialReversionsSkipped-1]))/(len(reversion_intensities) - NumInitialReversionsSkipped)
-        
-    plt.axhline(y = staircase_threshold, color='blue', linestyle='--')
-    statement = print(f'Estimated Threshold: {staircase_threshold:.2f}')
-    
-    return plt.show(), statement
-
-
 def SimulateTransformedStaircase(NumSimulations = 1000, 
                                  PsychometricCurveMu = 50,
                                  PsychometricCurveSigma = 10,
@@ -151,8 +65,9 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                                  NumAFC = 2, 
                                  Criterion = (3,1), 
                                  InitialStepSize = 10, 
-                                 StepFactor = 0.8,
-                                 NumInitialReversionsSkipped = 0):
+                                 StepFactor = 0.725,
+                                 NumInitialReversionsSkipped = 0,
+                                 ExamplePlot = True):
     
     # initialize variables for every simulation 
     
@@ -162,9 +77,17 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
     # store stimulus intensity values for each reversion number for each simulation 
     Reversion_Amplitude_History = np.full((MaxReversions, NumSimulations), 0)
     
+    # store whether or not trial was detected for plotting the staircase later 
+    Detection_History = np.full((MaxNumTrials, NumSimulations), 0)
+    
+    # store number of trials per simulation 
+    Num_Trials_History = np.full((NumSimulations, 1), 0)
+    
     # calculate thresholds per simulation + error 
-    Threshold_History = 
-    Threshold_Error_History = 
+    Threshold_History = np.full((NumSimulations, 1), 0)
+    
+    # store reversion trial numbers 
+    Reversion_Trials_History = np.full((MaxReversions, NumSimulations), 0)
     
     for simulation in range(NumSimulations):
         
@@ -187,6 +110,8 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                 response = 1 # correct, so stimulus intensity decreases 
             else: 
                 response = 0 # incorrect, so stimulus intensity increases
+            
+            Detection_History[trial, simulation] = response 
                
             if response == 1: 
                 cumulative_score[0] += 1
@@ -208,31 +133,75 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                  if current_direction == 0: 
                     current_direction = new_direction
                  elif current_direction != new_direction:
-                    Reversion_Amplitude_History[reversion_counter, simulation] = StimulusIntensity
+                    Reversion_Amplitude_History[reversion_counter, simulation] = Trial_Amplitude_History[trial, simulation] 
                     reversion_counter += 1
                     # when there's a reversion, decrease the step size 
                     step_size = step_size*StepFactor
                     current_direction = new_direction
+                    Reversion_Trials_History[reversion_counter, simulation] = trial
                     
             if reversion_counter == MaxReversions :
                 break
         
-
         if NumInitialReversionsSkipped == 0:
-            staircase_threshold = sum()
-     staircase_threshold = sum(reversion_intensities)/len(reversion_intensities)
-else:
-        staircase_threshold =  (sum(reversion_intensities) - sum(reversion_intensities[:NumInitialReversionsSkipped-1]))/(len(reversion_intensities) - NumInitialReversionsSkipped)
-    
-                
+            staircase_threshold = np.mean(Reversion_Amplitude_History[:, simulation])
+        else: staircase_threshold = np.mean(Reversion_Amplitude_History[:-NumInitialReversionsSkipped, simulation])
         
-    return Trial_Amplitude_History, Reversion_Amplitude_History
+        Threshold_History[simulation, 0] = staircase_threshold
+        Num_Trials_History[simulation, 0] = trial_counter
+        
+    return Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History
 
+ # plot the staircase for any simulation number specified
+
+Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History = SimulateTransformedStaircase(NumSimulations = 1000, 
+                                 PsychometricCurveMu = 50,
+                                 PsychometricCurveSigma = 10,
+                                 StimulusIntensityStart = 0, # start of stimulus intensity range 
+                                 StimulusIntensityStop = 100, # end of stimulus intensity range 
+                                 MaxNumTrials = 1000, 
+                                 MaxReversions = 10,  
+                                 NumAFC = 2, 
+                                 Criterion = (3,1), 
+                                 InitialStepSize = 5, 
+                                 StepFactor = 0.725,
+                                 NumInitialReversionsSkipped = 0,
+                                 ExamplePlot = True)
+
+def PlotExampleStaircase(Trial_Amplitude_History,
+                         Reversion_Amplitude_History,
+                         Threshold_History,
+                         Detection_History, 
+                         Num_Trials_History,
+                         SimulationNumber = 1):
+   
+    NumTrials = Num_Trials_History[SimulationNumber-1]
+ 
+    for trial in range(int(NumTrials-1)):
+        plt.step(trial, Trial_Amplitude_History[trial, SimulationNumber-1])
+        if Detection_History[trial, SimulationNumber-1] == 0:
+            plt.scatter(trial, Trial_Amplitude_History[trial, SimulationNumber-1], color = 'red')
+        elif Detection_History[trial, SimulationNumber-1] == 1:
+            plt.scatter(trial, Trial_Amplitude_History[trial, SimulationNumber-1], color = 'green')
+        plt.axhline(y = Threshold_History[SimulationNumber-1], color = 'blue', linestyle = '--')
+    return plt.show()
+    
+    
+PlotExampleStaircase(Trial_Amplitude_History,
+                         Reversion_Amplitude_History,
+                         Threshold_History,
+                         Detection_History, 
+                         Num_Trials_History,
+                         SimulationNumber = 5)
+    
+    
 # optimizing number of reversions + number of reversions to skip + plots 
     ## calculate the estimated threshold for each number of reversals or for each number of initial reversals skipped - what stimulus intensity would the staircase converge at if it had been stopped at x reversions or if x reversions were skipped? 
  
 def CalculateReversionThresholds(Reversion_Amplitude_History):
+    
     NumReversions, NumSimulations = Reversion_Amplitude_History.shape
+    
     
     # estimated threshold for each number of reversals counted 
     reversions_counted_thresholds = np.full((NumSimulations, NumReversions), 0)

@@ -22,13 +22,13 @@ StaircaseSimulation.PlotPsychometricFunctionTarget(stimulus_range, pr_correct, t
 
 ''' running the staircase simulation '''
 
-Trial_Amplitude_History, Reversion_Amplitude_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
-                                 PsychometricCurveMu = 20,
-                                 PsychometricCurveSigma = 5,
+Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
+                                 PsychometricCurveMu = 50,
+                                 PsychometricCurveSigma = 10,
                                  StimulusIntensityStart = 0, # start of stimulus intensity range 
                                  StimulusIntensityStop = 100, # end of stimulus intensity range 
                                  MaxNumTrials = 1000, 
-                                 MaxReversions = 20,  
+                                 MaxReversions = 10,  
                                  NumAFC = 2, 
                                  Criterion = (3,1), 
                                  InitialStepSize = 10, 
@@ -38,17 +38,11 @@ Trial_Amplitude_History, Reversion_Amplitude_History = StaircaseSimulation.Simul
 reversions_counted_thresholds, reversions_skipped_thresholds, NumReversions = StaircaseSimulation.CalculateReversionThresholds(Reversion_Amplitude_History)
 
 # example staircase plot 
-StaircaseSimulation.PlotStaircaseProcedure(PsychometricCurveMu = 50,
-                                 PsychometricCurveSigma = 10,
-                                 StimulusIntensityStart = 0, 
-                                 StimulusIntensityStop = 100, 
-                                 NumAFC = 2, 
-                                 InitialStepSize = 5, 
-                                 StepFactor = 0.5, 
-                                 MaxNumTrials = 100, 
-                                 MaxNumReversions = 10,
-                                 Criterion = (3,1),
-                                 NumInitialReversionsSkipped = 0)
+
+
+
+
+
 
 ''' Optimizing parameters for the 3up1down staircase in a 2AFC task'''
 
