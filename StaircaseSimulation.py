@@ -6,45 +6,78 @@ Created on Thu Nov  2 14:55:09 2023
 @author: mirayabaid
 """
 
-# Transformed Staircase Simulation Revised 2 
+# Transformed Staircase Simulation 
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import norm
 import random
 
+def GetPsychometricFunction(PsychometricCurveMu = 50,
+                                 PsychometricCurveSigma = 10,
+                                 StimulusIntensityStart = 0, 
+                                 StimulusIntensityStop = 100):
+    stimulus_range = np.linspace(StimulusIntensityStart, StimulusIntensityStop, 100)
+    pr_correct = norm.cdf(stimulus_range, loc = PsychometricCurveMu, scale = PsychometricCurveSigma) 
+    return stimulus_range, pr_correct
 
-def PlotPsychometricFunction(stim_start = 0,
-                             stim_end = 100, 
-                             mu = 50, 
-                             sigma = 5):
-    stim_x = np.linspace(stim_start, stim_end, 100)
-    pr_correct = norm.cdf(stim_x, loc = mu, scale = sigma) 
-    plt.plot(stim_x, pr_correct, color = 'red')
-    plt.xlabel('stimulus intensity')
-    plt.ylabel('p(correct)')
-    plt.show()
-    return plt.show()
+stimulus_range, pr_correct = GetPsychometricFunction()
 
-psychometric_function_plot = PlotPsychometricFunction()
-
-# def GetStaircaseConvergenceThreshold(NumAFC = 2, 
-                                    # Criterion = (3,1)): 
+ # get the staircase convergence point when the observer's performance can be attributed to ONLY their sensitivity and not guessing by chance 
+ 
+def GetStaircaseConvergenceTarget(NumAFC = 2, 
+                                    Criterion = (3,1)): 
+    chance = 1/NumAFC 
+    unadjusted_target= 0.5**(1/(Criterion[0]/Criterion[1]))
+    # adjusting the convergence point to account for chance 
+    target = (unadjusted_target - chance) 
+    # scaling this difference to the proportion of the range that's above chance 
+    target_probability = target/(1 - chance)
+    return target_probability, NumAFC, Criterion
                                         
+target_probability, NumAFC, Criterion = GetStaircaseConvergenceTarget()
+
+# find the stimulus amplitude at which the target staircase convergence target is reached 
+# basically the amplitude at which p(correctly detecting) = 0.5 (point of subjective equality)
+
+def GetStaircaseConvergenceIntensity(stimulus_range, pr_correct, target_probability): # values 
     
+    # find value in pr_correct that is closest to the target, then index by that value to find a stimulus intensity value 
+    # first find the absolute difference between pr_correct values and the target 
+    # whichever value from the resulting array is the smallest, find the index of that value, then use to find the target intensity 
     
+    target_index = np.abs(pr_correct - target_probability).argmin()
+    target_intensity = stimulus_range[target_index]
+    return target_intensity 
+
+target_intensity = GetStaircaseConvergenceIntensity(stimulus_range, pr_correct, target_probability)
+    
+def PlotPsychometricFunctionTarget(stimulus_range, pr_correct, target_probability, target_intensity):
+    plt.plot(stimulus_range, pr_correct, color='red', label='Psychometric Function')
+    plt.axhline(y=target_probability, color='blue', linestyle='--', label=f'Convergence Target (p): {target_probability:.2f}')
+    plt.axvline(x=target_intensity, color='green', linestyle='--', label=f'Convergence Amplitude: {target_intensity:.2f}')
+    plt.xlabel('Stimulus Intensity')
+    plt.ylabel('p(correct)')
+    plt.title(f'{Criterion[0]}-Down-{Criterion[1]}-Up Staircase Convergence Target for {NumAFC}AFC Task')
+    plt.legend()
+    plt.show()
+
+PlotPsychometricFunctionTarget(stimulus_range, pr_correct, target_probability, target_intensity)
+
+
+
 def SimulateTransformedStaircase(NumSimulations = 1000, 
                                  PsychometricCurveMu = 50,
-                                 PsychometricCurveSigma = 5,
+                                 PsychometricCurveSigma = 10,
                                  StimulusIntensityStart = 0, # start of stimulus intensity range 
                                  StimulusIntensityStop = 100, # end of stimulus intensity range 
                                  MaxNumTrials = 1000, 
-                                 MaxReversions = 8,  
+                                 MaxReversions = 15,  
                                  NumAFC = 2, 
                                  Criterion = (3,1), 
                                  InitialStepSize = 10, 
                                  StepFactor = 0.8,
-                                 NumReversionsSkipped = 0):
+                                 NumInitialReversionsSkipped = 0):
     
     # initialize variables for every simulation 
     
@@ -81,16 +114,16 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
             else:
                 cumulative_score[1] +=1 
             
-            if cumulative_score[0] >= Criterion[0]:
+            if cumulative_score[0] >= Criterion[0]: # if 3 correct 
                 new_direction = -1
                 StimulusIntensity = max(0, StimulusIntensity - step_size) 
                 cumulative_score = [0,0]
                 reached_criterion = True
             elif cumulative_score[1] == Criterion[1]: # if one wrong 
-               new_direction = +1
-               StimulusIntensity = min(100, StimulusIntensity + step_size)
-               cumulative_score = [0,0]
-               reached_criterion = True
+                new_direction = +1
+                StimulusIntensity = min(100, StimulusIntensity + step_size)
+                cumulative_score = [0,0]
+                reached_criterion = True
              
             if reached_criterion == True:
                  if current_direction == 0: 
@@ -110,10 +143,10 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
 
 Trial_Amplitude_History, Reversion_Amplitude_History = SimulateTransformedStaircase()
 
-# number of trials vs number of reversions plot  
+# number of trials vs number of reversions plot  ?
 
 # optimizing number of reversions + number of reversions to skip + plots 
-    ## calculate the estimated threshold for each number of reversals or for each number of initial reversals skipped
+    ## calculate the estimated threshold for each number of reversals or for each number of initial reversals skipped - what stimulus intensity would the staircase converge at if it had been stopped at x reversions or if x reversions were skipped? 
  
 def CalculateReversionThresholds(Reversion_Amplitude_History):
     NumReversions, NumSimulations = Reversion_Amplitude_History.shape
@@ -124,7 +157,7 @@ def CalculateReversionThresholds(Reversion_Amplitude_History):
         for r in range(NumReversions): 
             reversions_counted_thresholds[i, r] = np.mean(Reversion_Amplitude_History[:r+1, i])
     
-    # estimated threshold for each number of reversals skipped
+    # estimated threshold for each number of initial reversals skipped
     reversions_skipped_thresholds = np.full((NumSimulations, NumReversions), 0)
     for i in range(NumSimulations): 
         for r in range(NumReversions): 
@@ -138,30 +171,27 @@ def CalculateReversionThresholds(Reversion_Amplitude_History):
 reversions_counted_thresholds, reversions_skipped_thresholds, NumReversions = CalculateReversionThresholds(Reversion_Amplitude_History)
 
 # plotting 
-rc_mean_threshold = np.mean(reversions_counted_thresholds, axis = 0)
-rc_threshold_sd = np.std(reversions_counted_thresholds, axis = 0)
-rs_mean_threshold = np.mean(reversions_skipped_thresholds, axis = 0)
-rs_threshold_sd = np.mean(reversions_skipped_thresholds, axis = 0)
+rc_mean_threshold = np.mean(reversions_counted_thresholds, axis=0)
+rc_threshold_sd = np.std(reversions_counted_thresholds, axis=0)
+rs_mean_threshold = np.mean(reversions_skipped_thresholds, axis=0)
+rs_threshold_sd = np.std(reversions_skipped_thresholds, axis=0)
 
-# number of reversions plot 
+# number of reversions counted plot 
 plt.errorbar(list(range(NumReversions)), rc_mean_threshold, yerr=rc_threshold_sd, fmt='o-', color='b', capsize=5, label='Mean Threshold Estimate ± SD')
-plt.axhline(y=55, color='r', linestyle='--')
+plt.axhline(y=target_intensity, color='green', linestyle='--', label=f'Staircase Convergence Threshold: {target_intensity:.2f}')
 plt.xlabel('Number of Reversions')
-plt.ylabel('Mean Threshold Estimate')
-plt.title('Number of Reversions vs Mean Threshold Estimate ± SEM')
-
+plt.ylabel('Mean Threshold Estimate ± SD')
+plt.legend()
 plt.show()
 
 # number of initial reversions skipped plot 
-
-plt.errorbar(list(range(NumReversions)), rs_mean_threshold, yerr=rs_threshold_sd, fmt='o-', color='b', capsize=5, label='Mean Threshold Estimate ± SD')
-plt.axhline(y=55, color='r', linestyle='--')
-plt.xlabel('Number of Reversions')
-plt.ylabel('Mean Threshold Estimate')
-plt.title('Plot 2: Number of Reversions vs Mean Threshold Estimate ± SEM')
-
+plt.errorbar(list(range(NumReversions-1)), rs_mean_threshold[:-1], yerr=rs_threshold_sd[:-1], fmt='o-', color='b', capsize=5, label='Mean Threshold Estimate ± SD')
+plt.axhline(y=target_intensity, color='green', linestyle='--', label=f'Staircase Convergence Threshold: {target_intensity:.2f}')
+plt.xlabel('Number of Initial Reversions Skipped')
+plt.ylabel('Mean Threshold Estimate ± SD')
+plt.xlim(0, NumReversions-2) 
+plt.legend()
 plt.show()
-
     
     
   
