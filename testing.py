@@ -1,5 +1,3 @@
-
-
 from Package import StaircaseSimulation
 
 import matplotlib.pyplot as plt
@@ -20,17 +18,17 @@ target_probability, NumAFC, Criterion = StaircaseSimulation.GetStaircaseConverge
 
 target_intensity = StaircaseSimulation.GetStaircaseConvergenceIntensity(stimulus_range, pr_correct, target_probability)
 
-StaircaseSimulation.PlotPsychometricFunctionTarget(stimulus_range, pr_correct, target_probability, target_intensity)
+StaircaseSimulation.PlotPsychometricFunctionTarget(stimulus_range, pr_correct, target_probability, target_intensity, Criterion, NumAFC)
 
 ''' running the staircase simulation '''
 
 Trial_Amplitude_History, Reversion_Amplitude_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
-                                 PsychometricCurveMu = 50,
-                                 PsychometricCurveSigma = 10,
+                                 PsychometricCurveMu = 20,
+                                 PsychometricCurveSigma = 5,
                                  StimulusIntensityStart = 0, # start of stimulus intensity range 
                                  StimulusIntensityStop = 100, # end of stimulus intensity range 
                                  MaxNumTrials = 1000, 
-                                 MaxReversions = 15,  
+                                 MaxReversions = 20,  
                                  NumAFC = 2, 
                                  Criterion = (3,1), 
                                  InitialStepSize = 10, 
@@ -52,15 +50,9 @@ StaircaseSimulation.PlotStaircaseProcedure(PsychometricCurveMu = 50,
                                  Criterion = (3,1),
                                  NumInitialReversionsSkipped = 0)
 
-''' optimizing parameters of the staircase '''
+''' Optimizing parameters for the 3up1down staircase in a 2AFC task'''
 
-''' initial step size '''
-
-''' step factor '''
-
-''' optimal step size?'''
-# plot stepsize initial vs factor 
-
+''' 1) Number of reversions '''
 
 # plotting 
 rc_mean_threshold = np.mean(reversions_counted_thresholds, axis=0)
@@ -76,6 +68,9 @@ plt.ylabel('Mean Threshold Estimate ± SD')
 plt.legend()
 plt.show()
 
+# plot error 
+
+''' 2) Number of Initial Reversions Skipped '''
 # number of initial reversions skipped plot 
 plt.errorbar(list(range(NumReversions-1)), rs_mean_threshold[:-1], yerr=rs_threshold_sd[:-1], fmt='o-', color='b', capsize=5, label='Mean Threshold Estimate ± SD')
 plt.axhline(y=target_intensity, color='green', linestyle='--', label=f'Staircase Convergence Threshold: {target_intensity:.2f}')
@@ -84,3 +79,25 @@ plt.ylabel('Mean Threshold Estimate ± SD')
 plt.xlim(0, NumReversions-2) 
 plt.legend()
 plt.show()
+
+# plot error 
+
+## plot number of reversions skipped vs number of reversions - heatmap? 
+
+''' 3) Initial step size '''
+
+# plot initial step size vs number of reversions 
+# plot error 
+
+
+''' 4) Step factor (keeping the initial step size, number of reversions/skipped,  '''
+
+# plot initial step size vs number of reversions 
+# plor error 
+
+## plot initial step size initial vs factor 
+
+
+
+
+
