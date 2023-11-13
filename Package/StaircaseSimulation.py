@@ -61,13 +61,13 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                                  StimulusIntensityStart = 0, # start of stimulus intensity range 
                                  StimulusIntensityStop = 100, # end of stimulus intensity range 
                                  MaxNumTrials = 1000, 
-                                 MaxReversions = 15,  
+                                 MaxReversions = 8,  
                                  NumAFC = 2, 
                                  Criterion = (3,1), 
                                  InitialStepSize = 10, 
                                  StepFactor = 0.725,
                                  NumInitialReversionsSkipped = 0,
-                                 ExamplePlot = True):
+                                 ):
     
     # initialize variables for every simulation 
     
@@ -134,11 +134,12 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                     current_direction = new_direction
                  elif current_direction != new_direction:
                     Reversion_Amplitude_History[reversion_counter, simulation] = Trial_Amplitude_History[trial, simulation] 
+                    Reversion_Trials_History[reversion_counter, simulation] = trial
                     reversion_counter += 1
                     # when there's a reversion, decrease the step size 
                     step_size = step_size*StepFactor
                     current_direction = new_direction
-                    Reversion_Trials_History[reversion_counter, simulation] = trial
+                    
                     
             if reversion_counter == MaxReversions :
                 break
@@ -153,21 +154,6 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
     return Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History
 
  # plot the staircase for any simulation number specified
-
-Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History = SimulateTransformedStaircase(NumSimulations = 1000, 
-                                 PsychometricCurveMu = 50,
-                                 PsychometricCurveSigma = 10,
-                                 StimulusIntensityStart = 0, # start of stimulus intensity range 
-                                 StimulusIntensityStop = 100, # end of stimulus intensity range 
-                                 MaxNumTrials = 1000, 
-                                 MaxReversions = 10,  
-                                 NumAFC = 2, 
-                                 Criterion = (3,1), 
-                                 InitialStepSize = 5, 
-                                 StepFactor = 0.725,
-                                 NumInitialReversionsSkipped = 0,
-                                 ExamplePlot = True)
-
 def PlotExampleStaircase(Trial_Amplitude_History,
                          Reversion_Amplitude_History,
                          Threshold_History,
@@ -185,14 +171,6 @@ def PlotExampleStaircase(Trial_Amplitude_History,
             plt.scatter(trial, Trial_Amplitude_History[trial, SimulationNumber-1], color = 'green')
         plt.axhline(y = Threshold_History[SimulationNumber-1], color = 'blue', linestyle = '--')
     return plt.show()
-    
-    
-PlotExampleStaircase(Trial_Amplitude_History,
-                         Reversion_Amplitude_History,
-                         Threshold_History,
-                         Detection_History, 
-                         Num_Trials_History,
-                         SimulationNumber = 5)
     
     
 # optimizing number of reversions + number of reversions to skip + plots 
