@@ -153,7 +153,6 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
         
     return Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History
 
-Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History = SimulateTransformedStaircase()
  
 # plot the staircase for any simulation number specified
 def PlotExampleStaircase(Trial_Amplitude_History,
@@ -161,11 +160,11 @@ def PlotExampleStaircase(Trial_Amplitude_History,
                          Threshold_History,
                          Detection_History, 
                          Num_Trials_History,
+                         Reversion_Trials_History,
                          SimulationNumber = 1):
    
     NumTrials = Num_Trials_History[SimulationNumber-1]
-    NumTrials = int(NumTrials)
- 
+    
     for trial in range(int(NumTrials-1)):
         plt.step(trial, Trial_Amplitude_History[trial, SimulationNumber-1])
         if Detection_History[trial, SimulationNumber-1] == 0:
@@ -174,13 +173,6 @@ def PlotExampleStaircase(Trial_Amplitude_History,
             plt.scatter(trial, Trial_Amplitude_History[trial, SimulationNumber-1], color = 'green')
         plt.axhline(y = Threshold_History[SimulationNumber-1], color = 'blue', linestyle = '--')
     return plt.show()
-
-PlotExampleStaircase(Trial_Amplitude_History,
-                         Reversion_Amplitude_History,
-                         Threshold_History,
-                         Detection_History, 
-                         Num_Trials_History,
-                         SimulationNumber = 1)
     
 # optimizing number of reversions + number of reversions to skip + plots 
     ## calculate the estimated threshold for each number of reversals or for each number of initial reversals skipped - what stimulus intensity would the staircase converge at if it had been stopped at x reversions or if x reversions were skipped? 
