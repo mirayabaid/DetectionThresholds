@@ -22,7 +22,7 @@ StaircaseSimulation.PlotPsychometricFunctionTarget(stimulus_range, pr_correct, t
 
 ''' running the staircase simulation '''
 
-Trial_Amplitude_History, Reversion_Amplitude_History, Detection_History, Num_Trials_History, Threshold_History, Reversion_Trials_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
+Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
                                  PsychometricCurveMu = 50,
                                  PsychometricCurveSigma = 10,
                                  StimulusIntensityStart = 0, # start of stimulus intensity range 
@@ -31,18 +31,19 @@ Trial_Amplitude_History, Reversion_Amplitude_History, Detection_History, Num_Tri
                                  MaxReversions = 10,  
                                  NumAFC = 2, 
                                  Criterion = (3,1), 
-                                 InitialStepSize = 5, 
+                                 InitialStepSize = 10, 
                                  StepFactor = 0.725,
                                  NumInitialReversionsSkipped = 0)
 
 
 # example staircase plot 
-StaircaseSimulation.PlotExampleStaircase(Trial_Amplitude_History,
-                         Reversion_Amplitude_History,
-                         Threshold_History,
-                         Detection_History, 
-                         Num_Trials_History,
-                         SimulationNumber = 6)
+StaircaseSimulation.PlotExampleStaircase(Trial_Amplitude_History = Trial_Amplitude_History,
+                         Reversion_Amplitude_History = Reversion_Amplitude_History,
+                         Detection_History = Detection_History, 
+                         Num_Trials_History = Num_Trials_History,
+                         Threshold_History = Threshold_History,
+                         Reversion_Trials_History = Reversion_Trials_History,
+                         SimulationNumber = 10)
 
 ''' Optimizing parameters for the 3up1down staircase in a 2AFC task'''
 
@@ -57,7 +58,7 @@ rc_threshold_sd = np.std(reversions_counted_thresholds, axis=0)
 rs_mean_threshold = np.mean(reversions_skipped_thresholds, axis=0)
 rs_threshold_sd = np.std(reversions_skipped_thresholds, axis=0)
 
-# number of reversions counted plot 
+# number of reversions vs threshold calulcated 
 plt.errorbar(list(range(NumReversions)), rc_mean_threshold, yerr=rc_threshold_sd, fmt='o-', color='b', capsize=5, label='Mean Threshold Estimate ± SD')
 plt.axhline(y=target_intensity, color='green', linestyle='--', label=f'Staircase Convergence Threshold: {target_intensity:.2f}')
 plt.xlabel('Number of Reversions')
@@ -65,11 +66,13 @@ plt.ylabel('Mean Threshold Estimate ± SD')
 plt.legend()
 plt.show()
 
-# plot error 
+# plot number of reversions vs mean threshold error (sd) 
 plt.plot(list(range(NumReversions)), rc_threshold_sd)
 
+# plot number of reversions vs num of trials the staircase goes on until 
+
 ''' 2) Number of Initial Reversions Skipped '''
-# number of initial reversions skipped plot 
+# number of initial reversions skipped vs threshold calulcated  
 plt.errorbar(list(range(NumReversions-1)), rs_mean_threshold[:-1], yerr=rs_threshold_sd[:-1], fmt='o-', color='b', capsize=5, label='Mean Threshold Estimate ± SD')
 plt.axhline(y=target_intensity, color='green', linestyle='--', label=f'Staircase Convergence Threshold: {target_intensity:.2f}')
 plt.xlabel('Number of Initial Reversions Skipped')
@@ -78,11 +81,8 @@ plt.xlim(0, NumReversions-2)
 plt.legend()
 plt.show()
 
-# plot error vs number of reversions 
+# plot number of reversions skipped vs mean threshold error (sd) 
 
-# plot error vs number of initial reversions skipped 
-
-# plot error vs number of trials 
 
 ## plot number of reversions skipped vs number of reversions - heatmap? 
 

@@ -12,6 +12,14 @@ import numpy as np
 from scipy.stats import norm
 import random
 
+# things to fix 
+# change the step size after the first reversion, not the second reversion - why is that happening? 
+# why is the staircase not converging at the calculated point but mu? 
+
+
+
+
+
 def GetPsychometricFunction(PsychometricCurveMu = 50,
                                  PsychometricCurveSigma = 10,
                                  StimulusIntensityStart = 0, 
@@ -139,9 +147,8 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                     # when there's a reversion, decrease the step size 
                     step_size = step_size*StepFactor
                     current_direction = new_direction
-                    
-                    
-            if reversion_counter == MaxReversions :
+            
+            if reversion_counter == MaxReversions:
                 break
         
         if NumInitialReversionsSkipped == 0:
@@ -171,6 +178,8 @@ def PlotExampleStaircase(Trial_Amplitude_History,
             plt.scatter(trial, Trial_Amplitude_History[trial, SimulationNumber-1], color = 'red')
         elif Detection_History[trial, SimulationNumber-1] == 1:
             plt.scatter(trial, Trial_Amplitude_History[trial, SimulationNumber-1], color = 'green')
+        for trial in Reversion_Trials_History[:, SimulationNumber-1]:
+            plt.scatter(trial, Trial_Amplitude_History[trial, SimulationNumber-1], facecolors = "none", edgecolors = "black")    
         plt.axhline(y = Threshold_History[SimulationNumber-1], color = 'blue', linestyle = '--')
     return plt.show()
     
@@ -180,7 +189,6 @@ def PlotExampleStaircase(Trial_Amplitude_History,
 def CalculateReversionThresholds(Reversion_Amplitude_History):
     
     NumReversions, NumSimulations = Reversion_Amplitude_History.shape
-    
     
     # estimated threshold for each number of reversals counted 
     reversions_counted_thresholds = np.full((NumSimulations, NumReversions), 0)

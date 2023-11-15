@@ -18,7 +18,7 @@ def PlotStaircaseProcedure(PsychometricCurveMu = 50,
                                  InitialStepSize = 5, 
                                  StepFactor = 0.5, 
                                  MaxNumTrials = 100, 
-                                 MaxNumReversions = 10,
+                                 MaxNumReversions = 5,
                                  Criterion = (3,1),
                                  NumInitialReversionsSkipped = 0):
     # initialize variables
@@ -94,3 +94,5 @@ def PlotStaircaseProcedure(PsychometricCurveMu = 50,
     statement = print(f'Estimated Threshold: {staircase_threshold:.2f}')
     
     return plt.show(), statement
+
+PlotStaircaseProcedure()
