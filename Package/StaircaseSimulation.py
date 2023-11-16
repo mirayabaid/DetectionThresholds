@@ -12,12 +12,6 @@ import numpy as np
 from scipy.stats import norm
 import random
 
-# things to fix 
-# change the step size after the first reversion, not the second reversion - why is that happening? 
-# why is the staircase not converging at the calculated point but mu? 
-
-
-
 
 
 def GetPsychometricFunction(PsychometricCurveMu = 50,
@@ -62,6 +56,11 @@ def PlotPsychometricFunctionTarget(stimulus_range, pr_correct, target_probabilit
     plt.title(f'{Criterion[0]}-Down-{Criterion[1]}-Up Staircase Convergence Target for {NumAFC}AFC Task')
     plt.legend()
     plt.show()
+
+
+# things to fix 
+# change the step size after the first reversion, not the second reversion - why is that happening? 
+# why is the staircase not converging at the calculated point but mu? 
 
 def SimulateTransformedStaircase(NumSimulations = 1000, 
                                  PsychometricCurveMu = 50,

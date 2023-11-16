@@ -35,7 +35,6 @@ Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detecti
                                  StepFactor = 0.725,
                                  NumInitialReversionsSkipped = 0)
 
-
 # example staircase plot 
 StaircaseSimulation.PlotExampleStaircase(Trial_Amplitude_History = Trial_Amplitude_History,
                          Reversion_Amplitude_History = Reversion_Amplitude_History,
@@ -68,8 +67,16 @@ plt.show()
 
 # plot number of reversions vs mean threshold error (sd) 
 plt.plot(list(range(NumReversions)), rc_threshold_sd)
+plt.xlabel('Number of Reversions')
+plt.ylabel('Error')
+plt.title('Staircase Accuracy as a Function of # Reversions')
 
+plt.show()
+
+# staircase efficiency 
 # plot number of reversions vs num of trials the staircase goes on until 
+# 
+
 
 ''' 2) Number of Initial Reversions Skipped '''
 # number of initial reversions skipped vs threshold calulcated  
@@ -82,9 +89,18 @@ plt.legend()
 plt.show()
 
 # plot number of reversions skipped vs mean threshold error (sd) 
+plt.plot(list(range(NumReversions-1)), rs_threshold_sd[:-1])
+plt.xlabel('Number of Initial Reversions Skipped')
+plt.ylabel('Error')
+plt.title('Staircase Accuracy as a Function of # Initial Reversions Skipped')
+plt.show()
 
 
 ## plot number of reversions skipped vs number of reversions - heatmap? 
+
+# plot number of reversions vs num of trials the staircase goes on until 
+
+
 
 ''' 3) Initial step size '''
 
