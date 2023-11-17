@@ -28,7 +28,7 @@ Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detecti
                                  StimulusIntensityStart = 0, # start of stimulus intensity range 
                                  StimulusIntensityStop = 100, # end of stimulus intensity range 
                                  MaxNumTrials = 1000, 
-                                 MaxReversions = 10,  
+                                 MaxReversions = 8,  
                                  NumAFC = 2, 
                                  Criterion = [3,1], 
                                  InitialStepSize = 10, 
@@ -42,7 +42,7 @@ StaircaseSimulation.PlotExampleStaircase(Trial_Amplitude_History = Trial_Amplitu
                          Num_Trials_History = Num_Trials_History,
                          Threshold_History = Threshold_History,
                          Reversion_Trials_History = Reversion_Trials_History,
-                         SimulationNumber = 10)
+                         SimulationNumber = 1)
 
 ''' Optimizing parameters for the 3up1down staircase in a 2AFC task'''
 
@@ -74,6 +74,8 @@ plt.title('Staircase Accuracy as a Function of # Reversions')
 plt.show()
 
 # plot number of reversions vs num of trials the staircase goes on until 
+
+
 
 ''' 2) Number of Initial Reversions Skipped '''
 # number of initial reversions skipped vs threshold calulcated  

@@ -12,14 +12,14 @@ import numpy as np
 from scipy.stats import norm
 import random
 
-
 def GetPsychometricFunction(PsychometricCurveMu = 50,
                                  PsychometricCurveSigma = 10,
                                  StimulusIntensityStart = 0, 
                                  StimulusIntensityStop = 100):
     stimulus_range = np.linspace(StimulusIntensityStart, StimulusIntensityStop, 100)
     pr_correct = norm.cdf(stimulus_range, loc = PsychometricCurveMu, scale = PsychometricCurveSigma) 
-    return stimulus_range, pr_correct
+    return stimulus_range, pr_correct 
+
 
  # get the staircase convergence point when the observer's performance can be attributed to ONLY their sensitivity and not guessing by chance 
  
@@ -56,12 +56,8 @@ def PlotPsychometricFunctionTarget(stimulus_range, pr_correct, target_probabilit
     plt.legend()
     plt.show()
 
-
-# things to fix 
-# change the step size after the first reversion, not the second reversion - why is that happening? 
-# why is the staircase not converging at the calculated point but mu? 
-
-def SimulateTransformedStaircase(NumSimulations = 1000, 
+    
+def SimulateTransformedStaircase(NumSimulations = 1000,
                                  PsychometricCurveMu = 50,
                                  PsychometricCurveSigma = 10,
                                  StimulusIntensityStart = 0, # start of stimulus intensity range 
@@ -72,8 +68,7 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                                  Criterion = [3,1], 
                                  InitialStepSize = 10, 
                                  StepFactor = 0.725,
-                                 NumInitialReversionsSkipped = 0,
-                                 ):
+                                 NumInitialReversionsSkipped = 0): 
     
     # initialize variables for every simulation 
     
@@ -98,7 +93,7 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
     for simulation in range(NumSimulations):
         
         # initialize variables for every trial 
-        StimulusIntensity = random.randrange(StimulusIntensityStart, StimulusIntensityStop)
+        StimulusIntensity = random.randrange(StimulusIntensityStart, StimulusIntensityStop+1)
         trial_counter = 0 
         reversion_counter = 0 
         reached_criterion = False 
@@ -127,28 +122,34 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
             elif response == 0:
                 cumulative_score[1] +=1 # count incorrect responses 
             
+            # check if criteria met 
             if cumulative_score[0] >= Criterion[0]: # if there are 3 correct responses, stimulus intensity for the next trial decreases  
                 new_direction = -1 # direction = decreasing 
-                StimulusIntensity = max(0, StimulusIntensity - step_size) 
-                cumulative_score = [0,0]
                 reached_criterion = True
             elif cumulative_score[1] == Criterion[1]: # if one wrong, stimulus intensity for the next trial increases
                 new_direction = +1
-                StimulusIntensity = min(100, StimulusIntensity + step_size)
-                cumulative_score = [0,0]
                 reached_criterion = True
             
+            # check if 3-correct or 1-incorrect is matched 
             if reached_criterion == True:
                  if current_direction == 0: 
                     current_direction = new_direction
-                 elif current_direction != new_direction: # reversion detected 
-                    Reversion_Amplitude_History[reversion_counter, simulation] = Trial_Amplitude_History[trial, simulation] 
-                    Reversion_Trials_History[reversion_counter, simulation] = trial
-                    reversion_counter += 1
-                    # when there's a reversion, decrease the step size 
-                    step_size = step_size*StepFactor
-                    current_direction = new_direction
-            
+                 elif current_direction != new_direction: # 1st reversion detected 
+                     step_size = step_size*StepFactor 
+                     current_direction = new_direction
+                     # store trial information 
+                     Reversion_Amplitude_History[reversion_counter, simulation] = Trial_Amplitude_History[trial, simulation] 
+                     Reversion_Trials_History[reversion_counter, simulation] = trial
+                     reversion_counter += 1
+                # change next stimulus amplitude  
+                 if new_direction == +1:
+                    StimulusIntensity = min(100, StimulusIntensity + step_size)
+                 elif new_direction == -1: 
+                     StimulusIntensity = min(100, StimulusIntensity - step_size)
+                     
+                 reached_criterion = False
+                 cumulative_score = [0,0]
+                    
             if reversion_counter == MaxReversions:
                 break
         
@@ -161,7 +162,6 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
         
     return Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History
 
- 
 # plot the staircase for any simulation number specified
 def PlotExampleStaircase(Trial_Amplitude_History,
                          Reversion_Amplitude_History,
@@ -173,7 +173,7 @@ def PlotExampleStaircase(Trial_Amplitude_History,
    
     NumTrials = Num_Trials_History[SimulationNumber-1]
     
-    for trial in range(int(NumTrials-1)):
+    for trial in range(int(NumTrials)):
         plt.step(trial, Trial_Amplitude_History[trial, SimulationNumber-1])
         if Detection_History[trial, SimulationNumber-1] == 0:
             plt.scatter(trial, Trial_Amplitude_History[trial, SimulationNumber-1], color = 'red')
@@ -181,7 +181,9 @@ def PlotExampleStaircase(Trial_Amplitude_History,
             plt.scatter(trial, Trial_Amplitude_History[trial, SimulationNumber-1], color = 'green')
         for trial in Reversion_Trials_History[:, SimulationNumber-1]:
             plt.scatter(trial, Trial_Amplitude_History[trial, SimulationNumber-1], facecolors = "none", edgecolors = "black")    
-        plt.axhline(y = Threshold_History[SimulationNumber-1], color = 'blue', linestyle = '--')
+    
+    plt.axhline(y = Threshold_History[SimulationNumber-1], color = 'blue', linestyle = '--', label = f'Estimated Threshold = {Threshold_History[SimulationNumber-1]}')
+    plt.legend()
     return plt.show()
     
 
