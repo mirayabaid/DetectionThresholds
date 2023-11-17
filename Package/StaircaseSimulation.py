@@ -13,7 +13,6 @@ from scipy.stats import norm
 import random
 
 
-
 def GetPsychometricFunction(PsychometricCurveMu = 50,
                                  PsychometricCurveSigma = 10,
                                  StimulusIntensityStart = 0, 
@@ -70,7 +69,7 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                                  MaxNumTrials = 1000, 
                                  MaxReversions = 8,  
                                  NumAFC = 2, 
-                                 Criterion = (3,1), 
+                                 Criterion = [3,1], 
                                  InitialStepSize = 10, 
                                  StepFactor = 0.725,
                                  NumInitialReversionsSkipped = 0,
@@ -104,7 +103,7 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
         reversion_counter = 0 
         reached_criterion = False 
         current_direction, new_direction = 0, 0
-        cumulative_score = [0, 0]
+        cumulative_score = [0, 0] # correct, incorrect 
         step_size = InitialStepSize
         chance = 1/NumAFC
         
@@ -113,33 +112,36 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
             Trial_Amplitude_History[trial, simulation] = StimulusIntensity
             trial_counter += 1
             
-            if np.random.uniform(0, 1) < norm.cdf(StimulusIntensity, loc = PsychometricCurveMu, scale = PsychometricCurveSigma) or np.random.uniform(0, 1) > (1 - chance):
-                response = 1 # correct, so stimulus intensity decreases 
+            # if random number b/w 0 and 1 is less than p(detected) at the chosen stimulus intensity, 
+            # or if random number b/w 0 and 1 is less than p(detected by chance), then the response is correct 
+            if np.random.uniform(0, 1) < norm.cdf(StimulusIntensity, loc = PsychometricCurveMu, scale = PsychometricCurveSigma) or np.random.uniform(0, 1) < chance:
+                response = 1 # correct response 
             else: 
-                response = 0 # incorrect, so stimulus intensity increases
+                response = 0 # incorrect response 
             
+            # store the response for this trial 
             Detection_History[trial, simulation] = response 
                
             if response == 1: 
-                cumulative_score[0] += 1
-            else:
-                cumulative_score[1] +=1 
+                cumulative_score[0] += 1 # count correct responses 
+            elif response == 0:
+                cumulative_score[1] +=1 # count incorrect responses 
             
-            if cumulative_score[0] >= Criterion[0]: # if 3 correct 
-                new_direction = -1
+            if cumulative_score[0] >= Criterion[0]: # if there are 3 correct responses, stimulus intensity for the next trial decreases  
+                new_direction = -1 # direction = decreasing 
                 StimulusIntensity = max(0, StimulusIntensity - step_size) 
                 cumulative_score = [0,0]
                 reached_criterion = True
-            elif cumulative_score[1] == Criterion[1]: # if one wrong 
+            elif cumulative_score[1] == Criterion[1]: # if one wrong, stimulus intensity for the next trial increases
                 new_direction = +1
                 StimulusIntensity = min(100, StimulusIntensity + step_size)
                 cumulative_score = [0,0]
                 reached_criterion = True
-             
+            
             if reached_criterion == True:
                  if current_direction == 0: 
                     current_direction = new_direction
-                 elif current_direction != new_direction:
+                 elif current_direction != new_direction: # reversion detected 
                     Reversion_Amplitude_History[reversion_counter, simulation] = Trial_Amplitude_History[trial, simulation] 
                     Reversion_Trials_History[reversion_counter, simulation] = trial
                     reversion_counter += 1
@@ -182,8 +184,8 @@ def PlotExampleStaircase(Trial_Amplitude_History,
         plt.axhline(y = Threshold_History[SimulationNumber-1], color = 'blue', linestyle = '--')
     return plt.show()
     
-# optimizing number of reversions + number of reversions to skip + plots 
-    ## calculate the estimated threshold for each number of reversals or for each number of initial reversals skipped - what stimulus intensity would the staircase converge at if it had been stopped at x reversions or if x reversions were skipped? 
+
+ ## calculate the estimated threshold for each number of reversals or for each number of initial reversals skipped - what stimulus intensity would the staircase converge at if it had been stopped at x reversions or if x reversions were skipped? 
  
 def CalculateReversionThresholds(Reversion_Amplitude_History):
     

@@ -30,7 +30,7 @@ Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detecti
                                  MaxNumTrials = 1000, 
                                  MaxReversions = 10,  
                                  NumAFC = 2, 
-                                 Criterion = (3,1), 
+                                 Criterion = [3,1], 
                                  InitialStepSize = 10, 
                                  StepFactor = 0.725,
                                  NumInitialReversionsSkipped = 0)
@@ -73,10 +73,7 @@ plt.title('Staircase Accuracy as a Function of # Reversions')
 
 plt.show()
 
-# staircase efficiency 
 # plot number of reversions vs num of trials the staircase goes on until 
-# 
-
 
 ''' 2) Number of Initial Reversions Skipped '''
 # number of initial reversions skipped vs threshold calulcated  
@@ -95,23 +92,82 @@ plt.ylabel('Error')
 plt.title('Staircase Accuracy as a Function of # Initial Reversions Skipped')
 plt.show()
 
-
-## plot number of reversions skipped vs number of reversions - heatmap? 
-
 # plot number of reversions vs num of trials the staircase goes on until 
-
 
 
 ''' 3) Initial step size '''
 
-# plot initial step size vs number of reversions 
+initial_step_range = range(0, 15)
 
-# plot error 
+initial_step_thresholds = np.full((len(initial_step_range), 1), 0)
+initial_step_errors = np.full((len(initial_step_range), 1), 0)
 
+for step_sizes in initial_step_range: 
+    Threshold_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
+                                 PsychometricCurveMu = 50,
+                                 PsychometricCurveSigma = 10,
+                                 StimulusIntensityStart = 0, 
+                                 StimulusIntensityStop = 100, 
+                                 MaxNumTrials = 1000, 
+                                 MaxReversions = 8,  
+                                 NumAFC = 2, 
+                                 Criterion = [3,1], 
+                                 InitialStepSize = step_sizes, 
+                                 StepFactor = 0.725,
+                                 NumInitialReversionsSkipped = 0)[2]
+    threshold = np.mean(Threshold_History) # calculate threshold for each initial step size 
+    error = np.std(Threshold_History) # calculate the error 
+    initial_step_thresholds[step_sizes, 0] = threshold 
+    initial_step_errors[step_sizes, 0] = error 
+    
+plt.plot(list(initial_step_range), initial_step_thresholds)
+plt.xlabel('Initial Step Size')
+plt.ylabel('Estimated Threshold')
+plt.show()
 
-''' 4) Step factor (keeping the initial step size, number of reversions/skipped,  '''
+plt.plot(list(initial_step_range), initial_step_errors)
+plt.xlabel('Initial Step Size')
+plt.ylabel('Error')
+plt.title('Staircase Accuracy as a Function of Initial Step Size')
+plt.show()
 
-## plot initial step size initial vs factor 
+''' 4) Step factor '''
+
+step_factor_range = np.arange(0, 1, 0.2)
+
+step_factor_thresholds = np.full((len(step_factor_range), 1), 0)
+step_factor_errors = np.full((len(step_factor_range), 1), 0)
+
+for i, step_factors in enumerate(step_factor_range): 
+    Threshold_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
+                                 PsychometricCurveMu = 50,
+                                 PsychometricCurveSigma = 10,
+                                 StimulusIntensityStart = 0,  
+                                 StimulusIntensityStop = 100, 
+                                 MaxNumTrials = 1000, 
+                                 MaxReversions = 8,  
+                                 NumAFC = 2, 
+                                 Criterion = [3,1], 
+                                 InitialStepSize = 10, 
+                                 StepFactor = step_factors,
+                                 NumInitialReversionsSkipped = 0)[2]
+    threshold = np.mean(Threshold_History) # calculate threshold for each step factor 
+    error = np.std(Threshold_History) # calculate the error 
+    step_factor_thresholds[i, 0] = threshold 
+    step_factor_errors[i, 0] = error 
+    
+plt.plot(list(step_factor_range), step_factor_thresholds)
+plt.xlabel('Step Factor')
+plt.ylabel('Estimated Threshold')
+plt.show()
+
+plt.plot(list(step_factor_range), step_factor_errors)
+plt.xlabel('Step Factor')
+plt.ylabel('Error')
+plt.title('Staircase Accuracy as a Function of Step Factor')
+plt.show()
+
+## plot initial step size vs factor ? 
 
 
 
