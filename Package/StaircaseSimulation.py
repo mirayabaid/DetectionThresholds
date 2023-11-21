@@ -5,6 +5,13 @@ Created on Thu Nov  2 14:55:09 2023
 
 @author: mirayabaid
 """
+
+
+# psychometric curve sigma is not the same as JND, so maybe try converting to JND for calculation in main staircase function? 
+
+
+
+
 # Detection Threshold 2AFC Task: 3-Down-1-Up Transformed Staircase Simulation 
 
 import matplotlib.pyplot as plt
@@ -33,6 +40,7 @@ def GetStaircaseConvergenceTarget(NumAFC = 2,
     target_probability = target/(1 - chance)
     return target_probability, NumAFC, Criterion
                                         
+
 # find the stimulus amplitude at which the target staircase convergence target is reached 
 # basically the amplitude at which p(correctly detecting) = 0.5 (point of subjective equality)
 
@@ -56,10 +64,9 @@ def PlotPsychometricFunctionTarget(stimulus_range, pr_correct, target_probabilit
     plt.legend()
     plt.show()
 
-    
 def SimulateTransformedStaircase(NumSimulations = 1000,
                                  PsychometricCurveMu = 50,
-                                 PsychometricCurveSigma = 10,
+                                 PsychometricCurveSigma = 15,
                                  StimulusIntensityStart = 0, # start of stimulus intensity range 
                                  StimulusIntensityStop = 100, # end of stimulus intensity range 
                                  MaxNumTrials = 1000, 
@@ -100,33 +107,43 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
         current_direction, new_direction = 0, 0
         cumulative_score = [0, 0] # correct, incorrect 
         step_size = InitialStepSize
-        chance = 1/NumAFC
         
         for trial in range(MaxNumTrials): 
             
             Trial_Amplitude_History[trial, simulation] = StimulusIntensity
             trial_counter += 1
+        
+            # new method 
+            detection_draw = np.random.default_rng().normal(PsychometricCurveMu, (1/norm.ppf(.75))*PsychometricCurveSigma)
+            afc_draw = np.random.default_rng().uniform()
+            if detection_draw < StimulusIntensity or (NumAFC > 1 and afc_draw < 1/NumAFC):
+                response = 1
+            else:
+                response = 0
+            
+            # old method --> 
             
             # if random number b/w 0 and 1 is less than p(detected) at the chosen stimulus intensity, 
             # or if random number b/w 0 and 1 is less than p(detected by chance), then the response is correct 
-            if np.random.uniform(0, 1) < norm.cdf(StimulusIntensity, loc = PsychometricCurveMu, scale = PsychometricCurveSigma) or np.random.uniform(0, 1) < chance:
-                response = 1 # correct response 
-            else: 
-                response = 0 # incorrect response 
+            
+            # if np.random.uniform(0, 1) < norm.cdf(StimulusIntensity, loc = PsychometricCurveMu, scale = PsychometricCurveSigma) or np.random.uniform(0, 1) < chance:
+            #     response = 1 # correct response 
+            # else: 
+            #     response = 0 # incorrect response 
             
             # store the response for this trial 
             Detection_History[trial, simulation] = response 
-               
+             
             if response == 1: 
                 cumulative_score[0] += 1 # count correct responses 
             elif response == 0:
-                cumulative_score[1] +=1 # count incorrect responses 
+                cumulative_score[1] += 1 # count incorrect responses 
             
-            # check if criteria met 
+            # check if criterion is reached  
             if cumulative_score[0] >= Criterion[0]: # if there are 3 correct responses, stimulus intensity for the next trial decreases  
                 new_direction = -1 # direction = decreasing 
                 reached_criterion = True
-            elif cumulative_score[1] == Criterion[1]: # if one wrong, stimulus intensity for the next trial increases
+            elif cumulative_score[1] >= Criterion[1]: # if one wrong, stimulus intensity for the next trial increases
                 new_direction = +1
                 reached_criterion = True
             
@@ -134,8 +151,10 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
             if reached_criterion == True:
                  if current_direction == 0: 
                     current_direction = new_direction
-                 elif current_direction != new_direction: # 1st reversion detected 
+                 elif new_direction != current_direction and current_direction != 0: 
                      step_size = step_size*StepFactor 
+                     if step_size < 2:
+                         step_size = 2
                      current_direction = new_direction
                      # store trial information 
                      Reversion_Amplitude_History[reversion_counter, simulation] = Trial_Amplitude_History[trial, simulation] 
@@ -143,9 +162,11 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                      reversion_counter += 1
                 # change next stimulus amplitude  
                  if new_direction == +1:
-                    StimulusIntensity = min(100, StimulusIntensity + step_size)
+                    StimulusIntensity = min(StimulusIntensityStop, StimulusIntensity + step_size)
                  elif new_direction == -1: 
-                     StimulusIntensity = min(100, StimulusIntensity - step_size)
+                     StimulusIntensity = max(StimulusIntensityStart, StimulusIntensity - step_size)
+                     
+                 StimulusIntensity = np.round(StimulusIntensity / 2) * 2
                      
                  reached_criterion = False
                  cumulative_score = [0,0]
@@ -155,13 +176,14 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
         
         if NumInitialReversionsSkipped == 0:
             staircase_threshold = np.mean(Reversion_Amplitude_History[:, simulation])
-        else: staircase_threshold = np.mean(Reversion_Amplitude_History[:-NumInitialReversionsSkipped, simulation])
+        else: staircase_threshold = np.mean(Reversion_Amplitude_History[NumInitialReversionsSkipped:, simulation])
         
         Threshold_History[simulation, 0] = staircase_threshold
         Num_Trials_History[simulation, 0] = trial_counter
         
     return Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History
-
+            
+            
 # plot the staircase for any simulation number specified
 def PlotExampleStaircase(Trial_Amplitude_History,
                          Reversion_Amplitude_History,

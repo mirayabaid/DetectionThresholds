@@ -5,11 +5,12 @@ import numpy as np
 # from scipy.stats import norm
 # import random
 
+#%%
 ''' plotting the psychometric function, 
 calculating the stimulus intensity at which p(correct response) = 0.5 in a 2AFC 3up1down staircase '''
 
 stimulus_range, pr_correct = StaircaseSimulation.GetPsychometricFunction(PsychometricCurveMu = 50,
-                                 PsychometricCurveSigma = 10,
+                                 PsychometricCurveSigma = 15,
                                  StimulusIntensityStart = 0, 
                                  StimulusIntensityStop = 100)
 
@@ -19,16 +20,16 @@ target_probability, NumAFC, Criterion = StaircaseSimulation.GetStaircaseConverge
 target_intensity = StaircaseSimulation.GetStaircaseConvergenceIntensity(stimulus_range, pr_correct, target_probability)
 
 StaircaseSimulation.PlotPsychometricFunctionTarget(stimulus_range, pr_correct, target_probability, target_intensity, Criterion, NumAFC)
-
+#%%
 ''' running the staircase simulation '''
 
 Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
                                  PsychometricCurveMu = 50,
-                                 PsychometricCurveSigma = 10,
+                                 PsychometricCurveSigma = 15,
                                  StimulusIntensityStart = 0, # start of stimulus intensity range 
                                  StimulusIntensityStop = 100, # end of stimulus intensity range 
                                  MaxNumTrials = 1000, 
-                                 MaxReversions = 8,  
+                                 MaxReversions = 100,  
                                  NumAFC = 2, 
                                  Criterion = [3,1], 
                                  InitialStepSize = 10, 
@@ -43,6 +44,12 @@ StaircaseSimulation.PlotExampleStaircase(Trial_Amplitude_History = Trial_Amplitu
                          Threshold_History = Threshold_History,
                          Reversion_Trials_History = Reversion_Trials_History,
                          SimulationNumber = 1)
+
+#%% 
+
+
+
+#%%
 
 ''' Optimizing parameters for the 3up1down staircase in a 2AFC task'''
 
@@ -75,8 +82,6 @@ plt.show()
 
 # plot number of reversions vs num of trials the staircase goes on until 
 
-
-
 ''' 2) Number of Initial Reversions Skipped '''
 # number of initial reversions skipped vs threshold calulcated  
 plt.errorbar(list(range(NumReversions-1)), rs_mean_threshold[:-1], yerr=rs_threshold_sd[:-1], fmt='o-', color='b', capsize=5, label='Mean Threshold Estimate ± SD')
@@ -95,7 +100,6 @@ plt.title('Staircase Accuracy as a Function of # Initial Reversions Skipped')
 plt.show()
 
 # plot number of reversions vs num of trials the staircase goes on until 
-
 
 ''' 3) Initial step size '''
 
@@ -172,6 +176,56 @@ plt.show()
 ## plot initial step size vs factor ? 
 
 
+#%%
 
+'''Example Plot''' 
+(Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History,
+ Detection_History, Num_Trials_History, Reversion_Trials_History) = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1,
+    PsychometricCurveMu = 50,
+    PsychometricCurveSigma = 10,
+    StimulusIntensityStart = 0, # start of stimulus intensity range 
+    StimulusIntensityStop = 100, # end of stimulus intensity range 
+    MaxNumTrials = 100, 
+    MaxReversions = 8,  
+    NumAFC = 2, 
+    Criterion = [3,1], 
+    InitialStepSize = 10, 
+    StepFactor = 0.725,
+    NumInitialReversionsSkipped = 2)
+   
+NumTrials = Num_Trials_History[0][0]
+Trial_Amplitude_History = Trial_Amplitude_History[:NumTrials,0]
+Detection_History = Detection_History[:NumTrials,0]
+Reversion_Trials_History = Reversion_Trials_History[:,0]
+Reversion_Amplitude_History = Reversion_Amplitude_History[:,0]
+    
+fig, ax = plt.subplots()
+x_detect = np.where(Detection_History == 1)[0]
+x_miss = np.where(Detection_History == 0)[0]
 
+ax.plot(range(NumTrials), Trial_Amplitude_History, color = 'gray', linestyle = ':')
+ax.scatter(x_detect, Trial_Amplitude_History[x_detect], color = 'green')
+ax.scatter(x_miss, Trial_Amplitude_History[x_miss], color = 'red')
+ax.scatter(Reversion_Trials_History, Reversion_Amplitude_History, marker = '*', color = 'gold')
+plt.ylim(0, 100)
 
+print(np.mean(Reversion_Amplitude_History))
+
+#%%
+'''Example threshold, standard deviation '''
+(Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History,
+ Detection_History, Num_Trials_History, Reversion_Trials_History) = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000,
+    PsychometricCurveMu = 50,
+    PsychometricCurveSigma = 1,
+    StimulusIntensityStart = 0, # start of stimulus intensity range 
+    StimulusIntensityStop = 100, # end of stimulus intensity range 
+    MaxNumTrials = 100, 
+    MaxReversions = 8,  
+    NumAFC = 2, 
+    Criterion = [3,1], 
+    InitialStepSize = 10, 
+    StepFactor = 0.725,
+    NumInitialReversionsSkipped = 2)
+
+print(np.mean(np.mean(Reversion_Amplitude_History)))
+print(np.std(np.mean(Reversion_Amplitude_History, axis = 0)))
