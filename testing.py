@@ -33,17 +33,17 @@ Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detecti
                                  NumAFC = 2, 
                                  Criterion = [3,1], 
                                  InitialStepSize = 10, 
-                                 StepFactor = 0.725,
+                                 StepFactor = 0.5,
                                  NumInitialReversionsSkipped = 0)
 
-# example staircase plot 
-StaircaseSimulation.PlotExampleStaircase(Trial_Amplitude_History = Trial_Amplitude_History,
-                         Reversion_Amplitude_History = Reversion_Amplitude_History,
-                         Detection_History = Detection_History, 
-                         Num_Trials_History = Num_Trials_History,
-                         Threshold_History = Threshold_History,
-                         Reversion_Trials_History = Reversion_Trials_History,
-                         SimulationNumber = 1)
+# # example staircase plot 
+# StaircaseSimulation.PlotExampleStaircase(Trial_Amplitude_History = Trial_Amplitude_History,
+#                          Reversion_Amplitude_History = Reversion_Amplitude_History,
+#                          Detection_History = Detection_History, 
+#                          Num_Trials_History = Num_Trials_History,
+#                          Threshold_History = Threshold_History,
+#                          Reversion_Trials_History = Reversion_Trials_History,
+#                          SimulationNumber = 1)
 
 #%% 
 
@@ -173,7 +173,6 @@ plt.ylabel('Error')
 plt.title('Staircase Accuracy as a Function of Step Factor')
 plt.show()
 
-## plot initial step size vs factor ? 
 
 
 #%%
