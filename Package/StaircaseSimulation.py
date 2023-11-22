@@ -6,13 +6,11 @@ Created on Thu Nov  2 14:55:09 2023
 @author: mirayabaid
 """
 
-
+# think about changing/adding.. 
 # psychometric curve sigma is not the same as JND, so maybe try converting to JND for calculation in main staircase function? 
 
 
-
-
-# Detection Threshold 2AFC Task: 3-Down-1-Up Transformed Staircase Simulation 
+''' Detection Threshold 2AFC Task: 3-Down-1-Up Transformed Staircase Simulation '''
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -120,16 +118,6 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                 response = 1
             else:
                 response = 0
-            
-            # old method --> 
-            
-            # if random number b/w 0 and 1 is less than p(detected) at the chosen stimulus intensity, 
-            # or if random number b/w 0 and 1 is less than p(detected by chance), then the response is correct 
-            
-            # if np.random.uniform(0, 1) < norm.cdf(StimulusIntensity, loc = PsychometricCurveMu, scale = PsychometricCurveSigma) or np.random.uniform(0, 1) < chance:
-            #     response = 1 # correct response 
-            # else: 
-            #     response = 0 # incorrect response 
             
             # store the response for this trial 
             Detection_History[trial, simulation] = response 
