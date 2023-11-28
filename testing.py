@@ -2,6 +2,7 @@ from Package import StaircaseSimulation
 
 import matplotlib.pyplot as plt
 import numpy as np
+
 # from scipy.stats import norm
 # import random
 
@@ -35,7 +36,8 @@ StaircaseSimulation.PlotPsychometricFunctionTarget(stimulus_range, pr_correct, t
     Criterion = [3,1], 
     InitialStepSize = 10, 
     StepFactor = 0.725,
-    NumInitialReversionsSkipped = 2)
+    NumInitialReversionsSkipped = 2, 
+    use_MLE = True)
    
 NumTrials = Num_Trials_History[0][0]
 Trial_Amplitude_History = Trial_Amplitude_History[:NumTrials,0]
@@ -54,6 +56,7 @@ ax.scatter(Reversion_Trials_History, Reversion_Amplitude_History, marker = '*', 
 plt.ylim(0, 100)
 
 print(np.mean(Reversion_Amplitude_History))
+print(np.std(Reversion_Amplitude_History, axis = 0))
 
 # example plot specifying the simulation number 
 
@@ -99,49 +102,66 @@ rs_threshold_sd = np.std(reversions_skipped_thresholds, axis=0)
 plt.errorbar(list(range(NumReversions)), rc_mean_threshold, yerr=rc_threshold_sd, fmt='o-', color='b', capsize=5, label='Mean Threshold Estimate ± SD')
 plt.axhline(y=target_intensity, color='green', linestyle='--', label=f'Staircase Convergence Threshold: {target_intensity:.2f}')
 plt.xlabel('Number of Reversions')
-plt.ylabel('Mean Threshold Estimate ± SD')
+plt.ylabel('Mean Threshold Estimate ± σ')
 plt.legend()
 plt.show()
 
 # plot number of reversions vs mean threshold error (sd) 
 plt.plot(list(range(NumReversions)), rc_threshold_sd)
 plt.xlabel('Number of Reversions')
-plt.ylabel('Error (Std)')
+plt.ylabel('Error (σ)')
 plt.title('Staircase Accuracy as a Function of # Reversions')
 
 plt.show()
 
+
 # obviously, now we know that as the number of reversions increases, the staircase becomes more accurate 
 # however, the number of trials also increases (time taken for the procedure increases)
 
-# plot number of reversions vs num of trials 
-num_reversions_range = range(0, 100)
-for reversion_number in num_reversions_range:
-    Num_Trials_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
-                                 PsychometricCurveMu = 50,
-                                 PsychometricCurveSigma = 10,
-                                 StimulusIntensityStart = 0, 
-                                 StimulusIntensityStop = 100, 
-                                 MaxNumTrials = 1000, 
-                                 MaxReversions = 8,  
-                                 NumAFC = 2, 
-                                 Criterion = [3,1], 
-                                 InitialStepSize = step_sizes, 
-                                 StepFactor = 0.725,
-                                 NumInitialReversionsSkipped = 0)[4]
-    
-    
-    threshold = np.mean(Threshold_History) # calculate threshold for each initial step size 
-    error = np.std(Threshold_History) # calculate the error 
-    initial_step_thresholds[step_sizes, 0] = threshold 
-    initial_step_errors[step_sizes, 0] = error 
+''' num of trials vs number of reversions + error '''
 
-    
+num_reversions_range = range(1, 10)
 
+# initialize 1d array to store mean num of trials for maxreversions 
+numtrials_by_maxreversions = np.zeros((len(num_reversions_range)))
+threshold_error_by_maxreversions = np.zeros(len(num_reversions_range))
 
+for i, reversion_number in enumerate(num_reversions_range):
+    _, _, Threshold_History, _, Num_Trials_History, _ = StaircaseSimulation.SimulateTransformedStaircase(
+        NumSimulations=10, 
+        PsychometricCurveMu=50,
+        PsychometricCurveSigma=10,
+        StimulusIntensityStart=0, 
+        StimulusIntensityStop=100, 
+        MaxNumTrials=1000, 
+        MaxReversions=reversion_number,  
+        NumAFC=2, 
+        Criterion=[3,1], 
+        InitialStepSize=5, 
+        StepFactor=0.725,
+        NumInitialReversionsSkipped=0
+    )
 
+    # calculate mean number of trials and standard deviation of the threshold
+    num_trials = np.mean(Num_Trials_History)
+    threshold_error = np.std(Threshold_History)
 
+    # store the values in the arrays
+    numtrials_by_maxreversions[i] = num_trials
+    threshold_error_by_maxreversions[i] = threshold_error
 
+# plot for mean number of trials
+plt.plot(num_reversions_range, numtrials_by_maxreversions)
+plt.xlabel('Number of Reversions')
+plt.ylabel('Mean Number of Trials')
+plt.xticks(range(1, len(num_reversions_range) + 1))  # adjust the x-axis ticks
+plt.show()
+
+# plot for standard deviation of threshold estimates vs number of trials 
+plt.scatter(numtrials_by_maxreversions, threshold_error_by_maxreversions)
+plt.xlabel('Mean Number of Trials')
+plt.ylabel('Threshold Estimate Error (σ)')
+plt.show()
 
 
 ''' 2) Number of Initial Reversions Skipped '''
@@ -149,7 +169,7 @@ for reversion_number in num_reversions_range:
 plt.errorbar(list(range(NumReversions-1)), rs_mean_threshold[:-1], yerr=rs_threshold_sd[:-1], fmt='o-', color='b', capsize=5, label='Mean Threshold Estimate ± SD')
 plt.axhline(y=target_intensity, color='green', linestyle='--', label=f'Staircase Convergence Threshold: {target_intensity:.2f}')
 plt.xlabel('Number of Initial Reversions Skipped')
-plt.ylabel('Mean Threshold Estimate ± SD')
+plt.ylabel('Mean Threshold Estimate ± σ')
 plt.xlim(0, NumReversions-2) 
 plt.legend()
 plt.show()
@@ -157,11 +177,49 @@ plt.show()
 # plot number of reversions skipped vs mean threshold error (sd) 
 plt.plot(list(range(NumReversions-1)), rs_threshold_sd[:-1])
 plt.xlabel('Number of Initial Reversions Skipped')
-plt.ylabel('Error (Std)')
+plt.ylabel('Error (σ)')
 plt.title('Staircase Accuracy as a Function of # Initial Reversions Skipped')
 plt.show()
 
-# plot number of reversions vs num of trials the staircase goes on until 
+''' number of initial reversions skipped vs number of reversions - error heatmap'''
+
+# define the ranges 
+
+max_reversions_range = range(5, 11)  # range for MaxReversions
+num_initial_reversions_skipped_range = range(0, 5)  # range for NumInitialReversionsSkipped
+
+# initialize the 2D array for standard deviations
+error_matrix = np.zeros((len(max_reversions_range), len(num_initial_reversions_skipped_range)))
+
+# run simulations for each combination
+for i, max_reversions in enumerate(max_reversions_range):
+    for j, num_initial_reversions_skipped in enumerate(num_initial_reversions_skipped_range):
+        Threshold_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
+                                     PsychometricCurveMu = 50,
+                                     PsychometricCurveSigma = 10,
+                                     StimulusIntensityStart = 0, 
+                                     StimulusIntensityStop = 100, 
+                                     MaxNumTrials = 1000, 
+                                     MaxReversions = max_reversions,  
+                                     NumAFC = 2, 
+                                     Criterion = [3,1], 
+                                     InitialStepSize = 5, 
+                                     StepFactor = 0.725,
+                                     NumInitialReversionsSkipped = num_initial_reversions_skipped)[2]
+        error_matrix[i, j] = np.std(Threshold_History) # calculate the standard deviation for this combination
+    
+# plotting the heatmap
+plt.imshow(error_matrix, cmap='hot', interpolation='nearest')
+plt.colorbar()  # add color bar to show the scale of errors
+plt.xlabel('Number of Reversions')
+plt.ylabel('Number of Initial Reversions Skipped')
+plt.title('Error (σ)')
+
+plt.xticks(range(len(max_reversions_range)), max_reversions_range)  # replace with MaxReversions values
+plt.yticks(range(len(num_initial_reversions_skipped_range)), num_initial_reversions_skipped_range)  # replace with NumInitialReversionsSkipped values
+
+plt.show()
+
 
 ''' 3) Initial step size '''
 
@@ -195,7 +253,7 @@ plt.show()
 
 plt.plot(list(initial_step_range), initial_step_errors)
 plt.xlabel('Initial Step Size')
-plt.ylabel('Error')
+plt.ylabel('Error (σ)')
 plt.title('Staircase Accuracy as a Function of Initial Step Size')
 plt.show()
 
@@ -231,31 +289,30 @@ plt.show()
 
 plt.plot(list(step_factor_range), step_factor_errors)
 plt.xlabel('Step Factor')
-plt.ylabel('Error')
+plt.ylabel('Error (σ)')
 plt.title('Staircase Accuracy as a Function of Step Factor')
 plt.show()
 
+#%% 
+# using MLE for threshold estimation 
 
 
-#%%
 
 
 
-#%%
-'''Example threshold, standard deviation '''
-(Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History,
- Detection_History, Num_Trials_History, Reversion_Trials_History) = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000,
-    PsychometricCurveMu = 50,
-    PsychometricCurveSigma = 1,
-    StimulusIntensityStart = 0, # start of stimulus intensity range 
-    StimulusIntensityStop = 100, # end of stimulus intensity range 
-    MaxNumTrials = 100, 
-    MaxReversions = 8,  
-    NumAFC = 2, 
-    Criterion = [3,1], 
-    InitialStepSize = 10, 
-    StepFactor = 0.725,
-    NumInitialReversionsSkipped = 2)
 
-print(np.mean(np.mean(Reversion_Amplitude_History)))
-print(np.std(np.mean(Reversion_Amplitude_History, axis = 0)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
