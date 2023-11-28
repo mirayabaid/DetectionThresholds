@@ -6,10 +6,6 @@ Created on Thu Nov  2 14:55:09 2023
 @author: mirayabaid
 """
 
-# think about changing/adding.. 
-# psychometric curve sigma is not the same as JND, so maybe try converting to JND for calculation in main staircase function? 
-
-
 ''' Detection Threshold 2AFC Task: 3-Down-1-Up Transformed Staircase Simulation '''
 
 import matplotlib.pyplot as plt
