@@ -67,9 +67,6 @@ def PlotPsychometricFunctionTarget(stimulus_range, pr_correct, target_probabilit
 
 # for MLE 
 
-a = 50 # threshold, or point of PSE 
-b = 2
-
 def logistic_function(x, a, b):
     return 1 / (1 + np.exp(-(x - a) / b))
 
