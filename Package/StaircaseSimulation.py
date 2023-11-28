@@ -23,11 +23,26 @@ def GetPsychometricFunction(PsychometricCurveMu = 50,
                                  PsychometricCurveSigma = 10,
                                  StimulusIntensityStart = 0, 
                                  StimulusIntensityStop = 100):
-    stimulus_range = np.linspace(StimulusIntensityStart, StimulusIntensityStop, 100)
+    stimulus_range = np.linspace(StimulusIntensityStart, StimulusIntensityStop+1, 100)
     pr_correct = norm.cdf(stimulus_range, loc = PsychometricCurveMu, scale = PsychometricCurveSigma) 
     return stimulus_range, pr_correct 
 
+def GroundTruthPlot(stimulus_range, pr_correct):
+    q1 = np.percentile(stimulus_range, 25, interpolation='midpoint') # only works if the stimulus range is spaced evenly 
+    q2 = np.percentile(stimulus_range, 50, interpolation='midpoint')
+    q3 = np.percentile(stimulus_range, 75, interpolation='midpoint')
 
+    plt.plot(stimulus_range, pr_correct, color='black', label='Psychometric Function')
+    plt.axhline(y=0.5, color='blue', linestyle='--', label='PSE (p): 0.5')
+    plt.axvline(x=q2, color='red', linestyle='--', label=f'PSE/threshold: {q2:.1f}')
+    plt.axvline(x=q1, color='pink', linestyle='--', label=f'q1: {q1:.1f}')
+    plt.axvline(x=q3, color='pink', linestyle='--', label=f'q2: {q3:.1f}')
+    plt.xlabel('Stimulus Intensity')
+    plt.ylabel('p(correct)')
+    plt.title('Ground Truth Plot')
+    plt.legend()
+    plt.show()
+    
  # get the staircase convergence point when the observer's performance can be attributed to ONLY their sensitivity and not guessing by chance 
  
 def GetStaircaseConvergenceTarget(NumAFC = 2, 
@@ -54,14 +69,14 @@ def GetStaircaseConvergenceIntensity(stimulus_range, pr_correct, target_probabil
     target_intensity = stimulus_range[target_index]
     return target_intensity 
     
-def PlotPsychometricFunctionTarget(stimulus_range, pr_correct, target_probability, target_intensity, Criterion, NumAFC, PsychometricCurveMu):
+def StaircaseConvergencePlot(stimulus_range, pr_correct, target_probability, target_intensity, Criterion, NumAFC, PsychometricCurveMu):
     plt.plot(stimulus_range, pr_correct, color='black', label='Psychometric Function')
     plt.axhline(y=target_probability, color='blue', linestyle='--', label=f'Convergence Target (p): {target_probability:.2f}')
     plt.axvline(x=target_intensity, color='green', linestyle='--', label=f'Convergence Intensity: {target_intensity:.2f}')
     plt.axvline(x=PsychometricCurveMu, color='red', linestyle='--', label=f'Ground Truth: {PsychometricCurveMu:.2f}')
     plt.xlabel('Stimulus Intensity')
     plt.ylabel('p(correct)')
-    plt.title(f'{Criterion[0]}-Down-{Criterion[1]}-Up Staircase Convergence Target for {NumAFC}AFC Task')
+    plt.title(f'{Criterion[0]}-Down-{Criterion[1]}-Up Staircase Convergence Plot for {NumAFC}AFC Task')
     plt.legend()
     plt.show()
 
@@ -73,7 +88,7 @@ def logistic_function(x, a, b):
 def negative_log_likelihood(params, intensities, responses):
     a, b = params
     probabilities = logistic_function(intensities, a, b)
-    likelihoods = responses * np.log(probabilities) + (1 - responses) * np.log(1 - probabilities)
+    likelihoods = responses*np.log(probabilities) + (1 - responses)*np.log(1 - probabilities)
     return -np.sum(likelihoods)
 
 
@@ -224,7 +239,6 @@ def PlotExampleStaircase(Trial_Amplitude_History,
     plt.axhline(y = Threshold_History[SimulationNumber-1], color = 'blue', linestyle = '--', label = f'Estimated Threshold = {Threshold_History[SimulationNumber-1]}')
     plt.legend()
     return plt.show()
-    
 
  ## calculate the estimated threshold for each number of reversals or for each number of initial reversals skipped - what stimulus intensity would the staircase converge at if it had been stopped at x reversions or if x reversions were skipped? 
  
@@ -246,6 +260,7 @@ def CalculateReversionThresholds(Reversion_Amplitude_History):
                 reversions_skipped_thresholds[i, r] = (sum(Reversion_Amplitude_History[:, i]) - sum(Reversion_Amplitude_History[:r+1, i]))/(NumReversions - (r+1))
             else:
                 reversions_skipped_thresholds[i, r] = np.sum(Reversion_Amplitude_History[r+1:, i])
+    
     
     return reversions_counted_thresholds, reversions_skipped_thresholds, NumReversions
 
