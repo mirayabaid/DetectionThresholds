@@ -19,7 +19,7 @@ def GetPsychometricFunction(PsychometricCurveMu = 50,
                                  PsychometricCurveSigma = 10,
                                  StimulusIntensityStart = 0, 
                                  StimulusIntensityStop = 100):
-    stimulus_range = np.linspace(StimulusIntensityStart, StimulusIntensityStop+1, 100)
+    stimulus_range = np.linspace(StimulusIntensityStart, StimulusIntensityStop, 100)
     pr_correct = norm.cdf(stimulus_range, loc = PsychometricCurveMu, scale = PsychometricCurveSigma) 
     return stimulus_range, pr_correct 
 
@@ -81,6 +81,10 @@ def StaircaseConvergencePlot(stimulus_range, pr_correct, target_probability, tar
 def logistic_function(x, a, b):
     return 1 / (1 + np.exp(-(x - a) / b))
 
+# x = stimulus amplitudes 
+# a = mu 
+# b = sigma 
+
 def negative_log_likelihood(params, intensities, responses):
     a, b = params
     probabilities = logistic_function(intensities, a, b)
@@ -100,7 +104,9 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                                  InitialStepSize = 10, 
                                  StepFactor = 0.725,
                                  NumInitialReversionsSkipped = 0, 
-                                 use_MLE = False): 
+                                 use_MLE = False, 
+                                 MLE_Type = 'AllAmplitudes'):
+                                 
     
     # initialize variables for every simulation 
     
@@ -191,14 +197,24 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                 break
         
         # estimating the threshold 
-        if use_MLE:
-            # Use MLE for threshold estimation
-            intensities = Trial_Amplitude_History[:, simulation]
-            responses = Detection_History[:, simulation]
-            initial_params = [np.mean(intensities), np.std(intensities)]
-            result = minimize(negative_log_likelihood, initial_params, args=(intensities, responses))
-            threshold_estimate = result.x[0]
-            Threshold_History[simulation, 0] = threshold_estimate
+        if use_MLE == True:
+            if MLE_Type == 'All Amplitudes':
+                # Use MLE on all amplitudes 
+                intensities = Trial_Amplitude_History[:, simulation]
+                responses = Detection_History[:, simulation]
+                initial_params = [np.mean(intensities), np.std(intensities)]
+                result = minimize(negative_log_likelihood, initial_params, args=(intensities, responses))
+                threshold_estimate = result.x[0]
+                Threshold_History[simulation, 0] = threshold_estimate
+            elif MLE_Type == 'Reversion Amplitudes':
+                # Use MLE on reversion amplitudes only 
+                intensities = Reversion_Amplitude_History[:, simulation]
+                # index responses for reversion trials 
+                responses = Detection_History[[Reversion_Trials_History,simulation], simulation]
+                initial_params = [np.mean(intensities), np.std(intensities)]
+                result = minimize(negative_log_likelihood, initial_params, args=(intensities, responses))
+                threshold_estimate = result.x[0]
+                Threshold_History[simulation, 0] = threshold_estimate
         else:
             # Use mean of reversions for threshold estimation
             if NumInitialReversionsSkipped == 0:

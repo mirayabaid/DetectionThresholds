@@ -105,13 +105,14 @@ Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detecti
                                  PsychometricCurveSigma = 10,
                                  StimulusIntensityStart = 0, # start of stimulus intensity range 
                                  StimulusIntensityStop = 100, # end of stimulus intensity range 
-                                 MaxNumTrials = 1000, 
-                                 MaxReversions = 30,  
+                                 MaxNumTrials = 3000, 
+                                 MaxReversions = 100,  
                                  NumAFC = 2, 
                                  Criterion = [3,1], 
                                  InitialStepSize = 10, 
                                  StepFactor = 0.725,
-                                 NumInitialReversionsSkipped = 0)
+                                 NumInitialReversionsSkipped = 0,
+                                 use_MLE = False)
 
 # For 1) and 2), calculate the reversions counted/reversions skipped thresholds 
 reversions_counted_thresholds, reversions_skipped_thresholds, NumReversions = StaircaseSimulation.CalculateReversionThresholds(Reversion_Amplitude_History = Reversion_Amplitude_History) 
@@ -153,7 +154,7 @@ plt.show()
 
 '''Staircase Accuracy (Error) vs Staircase Efficiency (Number of Trials)'''
 
-num_reversions_range = range(1, 10)
+num_reversions_range = range(1, 100)
 
 # initialize 1d array to store mean num of trials for maxreversions 
 numtrials_by_maxreversions = np.zeros((len(num_reversions_range)))
@@ -162,16 +163,16 @@ threshold_std_by_maxreversions = np.zeros(len(num_reversions_range))
 
 for i, reversion_number in enumerate(num_reversions_range):
     _, _, Threshold_History, _, Num_Trials_History, _ = StaircaseSimulation.SimulateTransformedStaircase(
-        NumSimulations=100, 
+        NumSimulations=1000, 
         PsychometricCurveMu=50,
         PsychometricCurveSigma=10,
         StimulusIntensityStart=0, 
         StimulusIntensityStop=100, 
-        MaxNumTrials=1000, 
+        MaxNumTrials=3000, 
         MaxReversions=reversion_number,  
         NumAFC=2, 
         Criterion=[3,1], 
-        InitialStepSize=5, 
+        InitialStepSize=10, 
         StepFactor=0.725,
         NumInitialReversionsSkipped=0
     )
@@ -231,8 +232,8 @@ plt.show()
 ''' Number of initial reversions skipped vs number of reversions - error heatmap'''
 
 # define the ranges 
-max_reversions_range = range(6, 11)  # range for MaxReversions
-num_initial_reversions_skipped_range = range(0, 5)  # range for NumInitialReversionsSkipped
+max_reversions_range = range(10, 30)  # range for MaxReversions
+num_initial_reversions_skipped_range = range(2, 10)  # range for NumInitialReversionsSkipped
 
 # initialize the 2D array for standard deviations
 error_matrix = np.zeros((len(max_reversions_range), len(num_initial_reversions_skipped_range)))
@@ -348,6 +349,7 @@ plt.show()
 # i'm not even using the threshold history here to get the estimates, so why is there any difference at all? 
 # with and without MLE 
 
+# not using MLE 
 Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
                                  PsychometricCurveMu = 50,
                                  PsychometricCurveSigma = 10,
@@ -360,32 +362,23 @@ Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detecti
                                  InitialStepSize = 10, 
                                  StepFactor = 0.725,
                                  NumInitialReversionsSkipped = 0, 
-                                 )
+                                 use_MLE = True, 
+                                 MLE_Type = 'All Amplitudes')
 
 # calculate the reversion thresholds 
 reversions_counted_thresholds, reversions_skipped_thresholds, NumReversions = StaircaseSimulation.CalculateReversionThresholds(Reversion_Amplitude_History = Reversion_Amplitude_History) 
-
 rc_mean_threshold = np.mean(reversions_counted_thresholds, axis=0)
 rc_threshold_sd = np.std(reversions_counted_thresholds, axis=0)
 rc_threshold_error = (target_intensity - rc_mean_threshold)/rc_threshold_sd
-
-# # number of reversions vs threshold calulcated 
-# plt.errorbar(list(range(NumReversions)), rc_mean_threshold, yerr=rc_threshold_sd, fmt='o-', color='b', capsize=5, label='Mean Threshold Estimate ± SD')
-# plt.axhline(y=target_intensity, color='green', linestyle='--', label=f'Staircase Convergence Threshold: {target_intensity:.2f}')
-# plt.xlabel('Number of Reversions')
-# plt.ylabel('Mean Threshold Estimate ± σ')
-# plt.legend()
-# plt.show()
 
 # plot number of reversions vs mean threshold error (z-score)
 plt.plot(list(range(NumReversions)), rc_threshold_error, color = 'blue')
 plt.xlabel('Number of Reversions')
 plt.ylabel('Error (z-score)')
 plt.title('Staircase Accuracy as a Function of # Reversions')
+plt.legend()
 
-
-# using MLE.. 
-
+# using MLE using reversion amplitudes 
 Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
                                  PsychometricCurveMu = 50,
                                  PsychometricCurveSigma = 10,
@@ -398,62 +391,39 @@ Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detecti
                                  InitialStepSize = 10, 
                                  StepFactor = 0.725,
                                  NumInitialReversionsSkipped = 0, 
-                                 use_MLE = True)
+                                 use_MLE = True, 
+                                 MLE_Type = 'Reversion Amplitudes')
 
-# calculate the reversion thresholds 
 reversions_counted_thresholds, reversions_skipped_thresholds, NumReversions = StaircaseSimulation.CalculateReversionThresholds(Reversion_Amplitude_History = Reversion_Amplitude_History) 
-# plotting 
-
 rc_mean_threshold = np.mean(reversions_counted_thresholds, axis=0)
 rc_threshold_sd = np.std(reversions_counted_thresholds, axis=0)
 rc_threshold_error = (target_intensity - rc_mean_threshold)/rc_threshold_sd
+plt.plot(list(range(NumReversions)), rc_threshold_error, color = 'green')
 
-# # number of reversions vs threshold calulcated 
-# plt.errorbar(list(range(NumReversions)), rc_mean_threshold, yerr=rc_threshold_sd, fmt='o-', color='b', capsize=5, label='Mean Threshold Estimate ± SD')
-# plt.axhline(y=target_intensity, color='green', linestyle='--', label=f'Staircase Convergence Threshold: {target_intensity:.2f}')
-# plt.xlabel('Number of Reversions')
-# plt.ylabel('Mean Threshold Estimate ± σ')
-# plt.legend()
-# plt.show()
+# using MLE using all amplitudes 
+Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
+                                 PsychometricCurveMu = 50,
+                                 PsychometricCurveSigma = 10,
+                                 StimulusIntensityStart = 0, # start of stimulus intensity range 
+                                 StimulusIntensityStop = 100, # end of stimulus intensity range 
+                                 MaxNumTrials = 1000, 
+                                 MaxReversions = 30,  
+                                 NumAFC = 2, 
+                                 Criterion = [3,1], 
+                                 InitialStepSize = 10, 
+                                 StepFactor = 0.725,
+                                 NumInitialReversionsSkipped = 0, 
+                                 use_MLE = True, 
+                                 MLE_Type = 'All Amplitudes')
+                                 
 
-# plot number of reversions vs mean threshold error (z-score)
-plt.plot(list(range(NumReversions)), rc_threshold_error, color = 'orange')
+reversions_counted_thresholds, reversions_skipped_thresholds, NumReversions = StaircaseSimulation.CalculateReversionThresholds(Reversion_Amplitude_History = Reversion_Amplitude_History) 
+rc_mean_threshold = np.mean(reversions_counted_thresholds, axis=0)
+rc_threshold_sd = np.std(reversions_counted_thresholds, axis=0)
+rc_threshold_error = (target_intensity - rc_mean_threshold)/rc_threshold_sd
+plt.plot(list(range(NumReversions)), rc_threshold_error, color = 'red')
 plt.show()
+
 
 #%%
 
-# Threshold error with and without MLE 
-
-Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
-                                 PsychometricCurveMu = 50,
-                                 PsychometricCurveSigma = 10,
-                                 StimulusIntensityStart = 0, # start of stimulus intensity range 
-                                 StimulusIntensityStop = 100, # end of stimulus intensity range 
-                                 MaxNumTrials = 1000, 
-                                 MaxReversions = 30,  
-                                 NumAFC = 2, 
-                                 Criterion = [3,1], 
-                                 InitialStepSize = 10, 
-                                 StepFactor = 0.725,
-                                 NumInitialReversionsSkipped = 0, 
-                                 )
-
-error = (target_intensity - np.mean(Threshold_History))/np.std(Threshold_History)
-print(f'Threshold error not using MLE: {error}')
-Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History = StaircaseSimulation.SimulateTransformedStaircase(NumSimulations = 1000, 
-                                 PsychometricCurveMu = 50,
-                                 PsychometricCurveSigma = 10,
-                                 StimulusIntensityStart = 0, # start of stimulus intensity range 
-                                 StimulusIntensityStop = 100, # end of stimulus intensity range 
-                                 MaxNumTrials = 1000, 
-                                 MaxReversions = 30,  
-                                 NumAFC = 2, 
-                                 Criterion = [3,1], 
-                                 InitialStepSize = 10, 
-                                 StepFactor = 0.725,
-                                 NumInitialReversionsSkipped = 0, 
-                                 use_MLE = True
-                                 )
-
-error = (target_intensity - np.mean(Threshold_History))/np.std(Threshold_History)
-print(f'Threshold error using MLE: {error}')
