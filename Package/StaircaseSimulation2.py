@@ -1,82 +1,16 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Nov  2 14:55:09 2023
+Created on Thu Nov 30 13:49:04 2023
 
-@author: mirayabaid
+@author: Somlab
 """
 
-''' Detection Threshold 2AFC Task: 3-Down-1-Up Transformed Staircase Simulation '''
-
+# staircase simulation function without calculating threshold 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import norm
 import random
 from scipy.optimize import minimize
-
-
-def GetPsychometricFunction(PsychometricCurveMu = 50,
-                                 PsychometricCurveSigma = 10,
-                                 StimulusIntensityStart = 0, 
-                                 StimulusIntensityStop = 100):
-    stimulus_range = np.linspace(StimulusIntensityStart, StimulusIntensityStop, 100)
-    pr_correct = norm.cdf(stimulus_range, loc = PsychometricCurveMu, scale = PsychometricCurveSigma) 
-    return stimulus_range, pr_correct 
-
-def GroundTruthPlot(stimulus_range, pr_correct):
-    q1 = np.percentile(stimulus_range, 25, interpolation='midpoint') # only works if the stimulus range is spaced evenly 
-    q2 = np.percentile(stimulus_range, 50, interpolation='midpoint')
-    q3 = np.percentile(stimulus_range, 75, interpolation='midpoint')
-
-    plt.plot(stimulus_range, pr_correct, color='black', label='Psychometric Function')
-    plt.axhline(y=0.5, color='blue', linestyle='--', label='PSE (p): 0.5')
-    plt.axvline(x=q2, color='red', linestyle='--', label=f'PSE/threshold: {q2:.1f}')
-    plt.axvline(x=q1, color='pink', linestyle='--', label=f'q1: {q1:.1f}')
-    plt.axvline(x=q3, color='pink', linestyle='--', label=f'q2: {q3:.1f}')
-    plt.xlabel('Stimulus Intensity')
-    plt.ylabel('p(correct)')
-    plt.title('Ground Truth Plot')
-    plt.legend()
-    plt.show()
-    
- # get the staircase convergence point when the observer's performance can be attributed to ONLY their sensitivity and not guessing by chance 
- 
-def GetStaircaseConvergenceTarget(NumAFC = 2, 
-                                    Criterion = (3,1)): 
-    chance = 1/NumAFC 
-    unadjusted_target= 0.5**(1/(Criterion[0]/Criterion[1]))
-    # adjusting the convergence point to account for chance 
-    target = (unadjusted_target - chance) 
-    # scaling this difference to the proportion of the range that's above chance 
-    target_probability = target/(1 - chance)
-    return target_probability, NumAFC, Criterion
-                                        
-
-# find the stimulus amplitude at which the target staircase convergence target is reached 
-# basically the amplitude at which p(correctly detecting) = 0.5 (point of subjective equality)
-
-def GetStaircaseConvergenceIntensity(stimulus_range, pr_correct, target_probability): # values 
-    
-    # find value in pr_correct that is closest to the target, then index by that value to find a stimulus intensity value 
-    # first find the absolute difference between pr_correct values and the target 
-    # whichever value from the resulting array is the smallest, find the index of that value, then use to find the target intensity 
-    
-    target_index = np.abs(pr_correct - target_probability).argmin()
-    target_intensity = stimulus_range[target_index]
-    return target_intensity 
-    
-def StaircaseConvergencePlot(stimulus_range, pr_correct, target_probability, target_intensity, Criterion, NumAFC, PsychometricCurveMu):
-    plt.plot(stimulus_range, pr_correct, color='black', label='Psychometric Function')
-    plt.axhline(y=target_probability, color='blue', linestyle='--', label=f'Convergence Target (p): {target_probability:.2f}')
-    plt.axvline(x=target_intensity, color='green', linestyle='--', label=f'Convergence Intensity: {target_intensity:.2f}')
-    plt.axvline(x=PsychometricCurveMu, color='red', linestyle='--', label=f'Ground Truth: {PsychometricCurveMu:.2f}')
-    plt.xlabel('Stimulus Intensity')
-    plt.ylabel('p(correct)')
-    plt.title(f'{Criterion[0]}-Down-{Criterion[1]}-Up Staircase Convergence Plot for {NumAFC}AFC Task')
-    plt.legend()
-    plt.show()
-
-
 
 
 def SimulateTransformedStaircase(NumSimulations = 1000,
@@ -89,12 +23,8 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                                  NumAFC = 2, 
                                  Criterion = [3,1], 
                                  InitialStepSize = 10, 
-                                 StepFactor = 0.725,
-                                 NumInitialReversionsSkipped = 0, 
-                                 use_MLE = False, 
-                                 MLE_Type = 'AllAmplitudes'):
+                                 StepFactor = 0.725):
                                  
-    
     # initialize variables for every simulation 
     
     # store stimulus intensity values by trial number for each simulation 
@@ -108,9 +38,6 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
     
     # store number of trials per simulation 
     Num_Trials_History = np.full((NumSimulations, 1), 0)
-    
-    # calculate thresholds per simulation + error 
-    Threshold_History = np.full((NumSimulations, 1), 0)
     
     # store reversion trial numbers 
     Reversion_Trials_History = np.full((MaxReversions, NumSimulations), 0)
@@ -182,41 +109,12 @@ def SimulateTransformedStaircase(NumSimulations = 1000,
                     
             if reversion_counter == MaxReversions:
                 break
-        
-        # estimating the threshold 
-        if use_MLE == True:
-            if MLE_Type == 'All Amplitudes':
-                # Use MLE on all amplitudes 
-                intensities = Trial_Amplitude_History[:, simulation]
-                responses = Detection_History[:, simulation]
-                initial_params = [np.mean(intensities), np.std(intensities)]
-                result = minimize(negative_log_likelihood, initial_params, args=(intensities, responses))
-                threshold_estimate = result.x[0]
-                Threshold_History[simulation, 0] = threshold_estimate
-            elif MLE_Type == 'Reversion Amplitudes':
-                # Use MLE on reversion amplitudes only 
-                intensities = Reversion_Amplitude_History[:, simulation]
-                # index responses for reversion trials 
-                reversion_trials = Reversion_Trials_History[:, simulation]
-                responses = Detection_History[reversion_trials, simulation]
-                initial_params = [np.mean(intensities), np.std(intensities)]
-                result = minimize(negative_log_likelihood, initial_params, args=(intensities, responses))
-                threshold_estimate = result.x[0]
-                Threshold_History[simulation, 0] = threshold_estimate
-        else:
-            # Use mean of reversions for threshold estimation
-            if NumInitialReversionsSkipped == 0:
-                staircase_threshold = np.mean(Reversion_Amplitude_History[:, simulation])
-                staircase_threshold = staircase_threshold.astype(int)
-            else: 
-                staircase_threshold = np.mean(Reversion_Amplitude_History[NumInitialReversionsSkipped:, simulation])
-                staircase_threshold = staircase_threshold.astype(int)
-            Threshold_History[simulation, 0] = staircase_threshold
             
         Num_Trials_History[simulation, 0] = trial_counter
         
-    return Trial_Amplitude_History, Reversion_Amplitude_History, Threshold_History, Detection_History, Num_Trials_History, Reversion_Trials_History
-            
+    return Trial_Amplitude_History, Reversion_Amplitude_History, Detection_History, Num_Trials_History, Reversion_Trials_History
+
+Trial_Amplitude_History, Reversion_Amplitude_History, Detection_History, Num_Trials_History, Reversion_Trials_History = SimulateTransformedStaircase()
 
 # for MLE 
 
@@ -234,40 +132,53 @@ def negative_log_likelihood(params, intensities, responses):
     return -np.sum(likelihoods)
 
 
-
-
-
-
-
-
-
-    
-# plot the staircase for any simulation number specified
-def PlotExampleStaircase(Trial_Amplitude_History,
-                         Reversion_Amplitude_History,
-                         Threshold_History,
-                         Detection_History, 
-                         Num_Trials_History,
-                         Reversion_Trials_History,
-                         SimulationNumber = 1):
+def CalculateTransformedStaircaseThreshold(Reversion_Amplitude_History, Detection_History, Reversion_Trials_History,
+                                NumInitialReversionsSkipped = 0, use_MLE = False, MLE_Type = 'Reversion Amplitudes'):
    
-    NumTrials = Num_Trials_History[SimulationNumber-1]
+    a, b = Reversion_Amplitude_History.shape 
+    # a = number of reversions, b = number of simulations 
     
-    for trial in range(int(NumTrials)):
-        plt.step(trial, Trial_Amplitude_History[trial, SimulationNumber-1])
-        if Detection_History[trial, SimulationNumber-1] == 0:
-            plt.scatter(trial, Trial_Amplitude_History[trial, SimulationNumber-1], color = 'red')
-        elif Detection_History[trial, SimulationNumber-1] == 1:
-            plt.scatter(trial, Trial_Amplitude_History[trial, SimulationNumber-1], color = 'green')
-        for trial in Reversion_Trials_History[:, SimulationNumber-1]:
-            plt.scatter(trial, Trial_Amplitude_History[trial, SimulationNumber-1], facecolors = "none", edgecolors = "black")    
+    # create array to store thresholds 
+    Threshold_History = np.zeros(b)
     
-    plt.axhline(y = Threshold_History[SimulationNumber-1], color = 'blue', linestyle = '--', label = f'Estimated Threshold = {Threshold_History[SimulationNumber-1]}')
-    plt.legend()
-    return plt.show()
+    for simulation in range(b):
+        if use_MLE == True:
+            if MLE_Type == 'All Amplitudes':
+                intensities = Trial_Amplitude_History[:, simulation]
+                responses = Detection_History[:, simulation]
+                initial_params = [np.mean(intensities), np.std(intensities)]
+                result = minimize(negative_log_likelihood, initial_params, args=(intensities, responses))
+                threshold_estimate = result.x[0]
+                Threshold_History[simulation] = threshold_estimate
+            elif MLE_Type == 'Reversion Amplitudes':
+                # Use MLE on reversion amplitudes only 
+                intensities = Reversion_Amplitude_History[:, simulation]
+                # index responses for reversion trials 
+                reversion_trials = Reversion_Trials_History[:, simulation]
+                responses = Detection_History[reversion_trials, simulation]
+                initial_params = [np.mean(intensities), np.std(intensities)]
+                result = minimize(negative_log_likelihood, initial_params, args=(intensities, responses))
+                threshold_estimate = result.x[0]
+                Threshold_History[simulation] = threshold_estimate
+        else:
+        # Use mean of reversions for threshold estimation
+            if NumInitialReversionsSkipped == 0:
+                staircase_threshold = np.mean(Reversion_Amplitude_History[:, simulation])
+                staircase_threshold = staircase_threshold.astype(int)
+                Threshold_History[simulation] = staircase_threshold
+            else: 
+                staircase_threshold = np.mean(Reversion_Amplitude_History[NumInitialReversionsSkipped:, simulation])
+                staircase_threshold = staircase_threshold.astype(int)
+                Threshold_History[simulation] = staircase_threshold
 
- ## calculate the estimated threshold for each number of reversals or for each number of initial reversals skipped - what stimulus intensity would the staircase converge at if it had been stopped at x reversions or if x reversions were skipped? 
- 
+    return Threshold_History
+       
+# # Compute staircase threshold 
+
+Threshold_History = CalculateTransformedStaircaseThreshold(Reversion_Amplitude_History, Detection_History, Reversion_Trials_History,
+                                NumInitialReversionsSkipped = 0, use_MLE = True, MLE_Type = 'Reversion Amplitudes')
+
+
 def CalculateReversionThresholds(Reversion_Amplitude_History):
     
     NumReversions, NumSimulations = Reversion_Amplitude_History.shape
@@ -290,35 +201,9 @@ def CalculateReversionThresholds(Reversion_Amplitude_History):
     
     return reversions_counted_thresholds, reversions_skipped_thresholds, NumReversions
 
-
-# Calculating the threshold using MLE 
-  
-# MLE would involve fitting a logistic function to the sequence of stimulus intensities and responses (correct/incorrect detections), 
-# and then estimating the threshold as the stimulus intensity at which the probability of a correct response is 50%.
-    
-    
-# define a logistic function
     
     
     
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
