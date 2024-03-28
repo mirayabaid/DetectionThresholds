@@ -234,14 +234,6 @@ def negative_log_likelihood(params, intensities, responses):
     return -np.sum(likelihoods)
 
 
-
-
-
-
-
-
-
-    
 # plot the staircase for any simulation number specified
 def PlotExampleStaircase(Trial_Amplitude_History,
                          Reversion_Amplitude_History,
