@@ -1,4 +1,4 @@
-# Detection #Thresholds
+# Detection Thresholds
 
 This code is designed to simulate variations of the up-down staircase procedure used to detect sensory thresholds for psychophysical experiments. 
 Many variations of the staircase procedure are used for detecting sensory thresholds, and here, we aim to find the optimal parameters for this method to maximize its efficiency & accuracy. 
